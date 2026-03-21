@@ -64,7 +64,7 @@ On first power-up (or when no WiFi available), the device enters configuration m
 
 After configuration, the device:
 1. Connects to WiFi
-2. Fetches weather from OpenWeatherMap
+2. Fetches weather from WeatherAPI.com (single HTTPS call)
 3. Displays weather on screen
 4. Allows 30 seconds of touch navigation
 5. Enters deep sleep (configurable interval)
@@ -87,7 +87,7 @@ After configuration, the device:
 | Field | Description | Example |
 |-------|-------------|---------|
 | WiFi (up to 3) | Network SSID and password | MyWiFi / password123 |
-| OWM API Key | OpenWeatherMap API key | abc123... |
+| WeatherAPI Key | WeatherAPI.com API key | abc123... |
 | Groq API Key | For AI narrative (free) | gsk_... |
 | City | City name for display | Mexico City |
 | Latitude | Location latitude | 19.4326 |
@@ -100,10 +100,10 @@ After configuration, the device:
 
 ## API Keys
 
-### OpenWeatherMap (required)
-1. Sign up at https://openweathermap.org/
-2. Go to API Keys section
-3. Copy your key
+### WeatherAPI.com (required)
+1. Sign up at https://www.weatherapi.com/
+2. Go to Dashboard
+3. Copy your API key
 
 ### Groq (optional, for Weather Narrative)
 1. Sign up at https://console.groq.com/
@@ -140,7 +140,8 @@ After configuration, the device:
 - Touch firmly for at least 50ms
 
 ### No weather data
-- Check your OpenWeatherMap API key is valid
+- Check your WeatherAPI.com API key is valid
+- Error 403 = invalid API key
 - Verify latitude/longitude are correct
 - Check WiFi credentials
 
@@ -152,7 +153,7 @@ After configuration, the device:
 
 | File | Description |
 |------|-------------|
-| `LilyGo-EPD-4-7-OWM-Weather-Display.ino` | Main sketch |
+| `LilyGo-EPD-4-7-WeatherAPI-Touch.ino` | Main sketch |
 | `wifi_manager.h` | AP mode and web server |
 | `owm_credentials.h` | Default configuration |
 | `lang.h` | Multi-language strings |
@@ -191,7 +192,7 @@ Based on original work by David Bird - See Licence.txt
 - Modified by Stefan Maetschke 2025
 - Touch version with extensions by XE1E 2026
 - EPD47 library by Vroland/DFRobot
-- Weather data from OpenWeatherMap
+- Weather data from WeatherAPI.com
 - AI narrative by Groq/Llama
 
 ---

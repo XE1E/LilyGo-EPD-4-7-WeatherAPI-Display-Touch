@@ -9,7 +9,7 @@
 5. [Configuration](#5-configuration)
 6. [Utilisation de l'Appareil](#6-utilisation-de-lappareil)
 7. [Ecrans de Navigation](#7-ecrans-de-navigation)
-8. [API OpenWeatherMap](#8-api-openweathermap)
+8. [API WeatherAPI](#8-api-openweathermap)
 9. [Gestion de l'Energie](#9-gestion-de-lenergie)
 10. [Boitier Imprime en 3D](#10-boitier-imprime-en-3d)
 11. [Resolution de Problemes](#11-resolution-de-problemes)
@@ -26,7 +26,7 @@
 
 ### 1.1 Description Generale
 
-La Station Meteo LilyGo EPD 4.7" est un appareil base sur ESP32-S3 qui affiche des informations meteorologiques en temps reel obtenues d'OpenWeatherMap. Elle utilise un ecran e-paper (encre electronique) de 4,7 pouces offrant une excellente visibilite dans toutes les conditions d'eclairage et une faible consommation d'energie.
+La Station Meteo LilyGo EPD 4.7" est un appareil base sur ESP32-S3 qui affiche des informations meteorologiques en temps reel obtenues d'WeatherAPI. Elle utilise un ecran e-paper (encre electronique) de 4,7 pouces offrant une excellente visibilite dans toutes les conditions d'eclairage et une faible consommation d'energie.
 
 ### 1.2 Caracteristiques Principales
 
@@ -233,9 +233,9 @@ L'ecran supporte 16 niveaux de gris definis dans le code:
 ### 3.2 Structure des Fichiers
 
 ```
-LilyGo-EPD-4-7-OWM-Weather-Display/
+LilyGo-EPD-4-7-WeatherAPI-Touch/
 |
-+-- LilyGo-EPD-4-7-OWM-Weather-Display.ino  # Sketch principal
++-- LilyGo-EPD-4-7-WeatherAPI-Touch.ino  # Sketch principal
 |
 +-- owm_credentials.h     # Identifiants WiFi et API (defauts)
 |
@@ -295,7 +295,7 @@ La configuration est stockee dans l'espace "weather" des Preferences ESP32:
 | ssid1, pass1 | String | Reseau WiFi principal |
 | ssid2, pass2 | String | Reseau WiFi secondaire |
 | ssid3, pass3 | String | Reseau WiFi tertiaire |
-| apikey | String | Cle API OpenWeatherMap |
+| apikey | String | Cle API WeatherAPI |
 | fcdays | Int | Jours de prevision (3 ou 5) |
 | city | String | Nom de la ville |
 | lat, lon | String | Coordonnees geographiques |
@@ -385,7 +385,7 @@ const WiFiCredentials wifiNetworks[] = {
   {"ReseauTertiaire", "troisiemedepasse"},
 };
 
-// API OpenWeatherMap
+// API WeatherAPI
 String apikey = "votre_cle_api_ici";
 
 // API Groq (pour Meteo Narrative - gratuit sur console.groq.com)
@@ -448,8 +448,8 @@ La page web est organisee en 4 onglets:
 - **Reseau Tertiaire**: SSID et mot de passe (optionnel)
 
 #### Onglet 2: Meteo
-- **Cle API**: Cle OpenWeatherMap
-- **Jours de Prevision**: 3 ou 5 jours
+- **Cle API**: Cle WeatherAPI
+- **Jours de Prevision**: 3 jours
 - **Ville**: Nom a afficher
 - **Latitude/Longitude**: Coordonnees exactes
 - **Hemisphere**: Nord ou Sud (affecte phases lunaires)
@@ -493,7 +493,7 @@ La page web est organisee en 4 onglets:
 1. **Mise sous tension** - L'appareil demarre automatiquement
 2. **Connexion WiFi** - Recherche des reseaux configures
 3. **Synchronisation** - Obtient l'heure via NTP
-4. **Donnees meteo** - Telecharge depuis OpenWeatherMap
+4. **Donnees meteo** - Telecharge depuis WeatherAPI
 5. **Historique** - Enregistre la lecture dans l'historique local
 6. **Affichage** - Montre l'ecran configure (principal ou dernier visite)
 7. **Serveur web** - Disponible pour configuration a http://[IP_LOCALE]
@@ -593,7 +593,7 @@ Ecran Principal (SCREEN_MAIN)
 
 **Acces**: Toucher la moitie DROITE des graphiques de l'ecran principal.
 
-**Note**: Ces graphiques montrent des TENDANCES (predictions futures) de l'API OpenWeatherMap, pas des donnees historiques reelles.
+**Note**: Ces graphiques montrent des TENDANCES (predictions futures) de l'API WeatherAPI, pas des donnees historiques reelles.
 
 ### 7.6 Ecran 4: Information Systeme
 
@@ -613,11 +613,11 @@ Affiche les donnees historiques reelles enregistrees par l'appareil.
 
 ---
 
-## 8. API OpenWeatherMap
+## 8. API WeatherAPI
 
 ### 8.1 Obtention d'une Cle API
 
-1. Aller sur https://openweathermap.org/
+1. Aller sur https://www.weatherapi.com/
 2. Creer un compte gratuit
 3. Aller dans "API Keys" dans le profil
 4. Copier ou generer une nouvelle cle
@@ -629,7 +629,7 @@ Affiche les donnees historiques reelles enregistrees par l'appareil.
 | Appels/minute | 60 |
 | Appels/mois | 1 000 000 |
 | Donnees historiques | Non |
-| Previsions | 5 jours / 3 heures |
+| Previsions | 3 jours / 3 heures |
 
 ### 8.3 Points d'Acces Utilises
 
@@ -653,7 +653,7 @@ Parametres:
   appid={cle_api}
   units=metric|imperial
   lang={code_langue}
-  cnt=40  (8 lectures/jour x 5 jours)
+  cnt=40  (8 lectures/jour x 3 jours)
 ```
 
 ---
@@ -716,7 +716,7 @@ Moyenne: ~0,1mA (avec batterie 2000mAh = ~20 000 heures)
 **Symptomes**: Ecran vide ou "?"
 
 **Solutions**:
-1. Verifier la Cle API OpenWeatherMap
+1. Verifier la Cle API WeatherAPI
 2. Verifier les coordonnees de localisation
 3. Verifier la connexion internet
 4. Consulter le Moniteur Serie pour les erreurs
@@ -920,7 +920,7 @@ Le style se configure depuis l'interface web (Section Systeme -> Meteo Narrative
 
 ##### Donnees Utilisees
 
-L'IA genere le texte en utilisant les donnees reelles d'OpenWeatherMap (n'invente pas de chiffres):
+L'IA genere le texte en utilisant les donnees reelles d'WeatherAPI (n'invente pas de chiffres):
 - Temperature actuelle et ressenti
 - Humidite et pression atmospherique
 - Condition du ciel (nuageux, ensoleille, etc.)
@@ -1009,7 +1009,7 @@ Le systeme supporte 3 langues configurables:
 | Texte | Espagnol | Anglais | Francais |
 |-------|----------|---------|----------|
 | Conditions | Condiciones Actuales | Current Conditions | Conditions Actuelles |
-| Previsions | Pronostico 5 Dias | 5-Day Forecast | Previsions 5 Jours |
+| Previsions | Pronostico 5 Dias | 5-Day Forecast | Previsions 3 Jours |
 | Tendances | Tendencias del Clima | Weather Trends | Tendances Meteo |
 | Historique | Historial | History | Historique |
 | Info Systeme | Info del Sistema | System Info | Info Systeme |

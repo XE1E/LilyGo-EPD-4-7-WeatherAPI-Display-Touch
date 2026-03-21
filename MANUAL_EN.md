@@ -9,7 +9,7 @@
 5. [Configuration](#5-configuration)
 6. [Device Usage](#6-device-usage)
 7. [Navigation Screens](#7-navigation-screens)
-8. [OpenWeatherMap API](#8-openweathermap-api)
+8. [WeatherAPI API](#8-openweathermap-api)
 9. [Power Management](#9-power-management)
 10. [3D Printed Case](#10-3d-printed-case)
 11. [Troubleshooting](#11-troubleshooting)
@@ -26,7 +26,7 @@
 
 ### 1.1 General Description
 
-The LilyGo EPD 4.7" Weather Station is an ESP32-S3 based device that displays real-time weather information from OpenWeatherMap. It uses a 4.7-inch e-paper (electronic ink) display that offers excellent visibility under any lighting condition and low power consumption.
+The LilyGo EPD 4.7" Weather Station is an ESP32-S3 based device that displays real-time weather information from WeatherAPI. It uses a 4.7-inch e-paper (electronic ink) display that offers excellent visibility under any lighting condition and low power consumption.
 
 ### 1.2 Main Features
 
@@ -233,9 +233,9 @@ The display supports 16 gray levels defined in code:
 ### 3.2 File Structure
 
 ```
-LilyGo-EPD-4-7-OWM-Weather-Display/
+LilyGo-EPD-4-7-WeatherAPI-Touch/
 |
-+-- LilyGo-EPD-4-7-OWM-Weather-Display.ino  # Main sketch
++-- LilyGo-EPD-4-7-WeatherAPI-Touch.ino  # Main sketch
 |
 +-- owm_credentials.h     # WiFi and API credentials (defaults)
 |
@@ -295,7 +295,7 @@ Configuration is stored in ESP32 Preferences namespace "weather":
 | ssid1, pass1 | String | Primary WiFi network |
 | ssid2, pass2 | String | Secondary WiFi network |
 | ssid3, pass3 | String | Tertiary WiFi network |
-| apikey | String | OpenWeatherMap API Key |
+| apikey | String | WeatherAPI API Key |
 | fcdays | Int | Forecast days (3 or 5) |
 | city | String | City name |
 | lat, lon | String | Geographic coordinates |
@@ -385,7 +385,7 @@ const WiFiCredentials wifiNetworks[] = {
   {"TertiaryNetwork", "thirdpass"},
 };
 
-// OpenWeatherMap API
+// WeatherAPI API
 String apikey = "your_api_key_here";
 
 // Groq API (for Weather Narrative - free at console.groq.com)
@@ -448,8 +448,8 @@ The web page is organized in 4 tabs:
 - **Tertiary Network**: SSID and password (optional)
 
 #### Tab 2: Weather
-- **API Key**: OpenWeatherMap key
-- **Forecast Days**: 3 or 5 days
+- **API Key**: WeatherAPI key
+- **Forecast Days**: 3 days
 - **City**: Display name
 - **Latitude/Longitude**: Exact coordinates
 - **Hemisphere**: North or South (affects moon phases)
@@ -493,7 +493,7 @@ The web page is organized in 4 tabs:
 1. **Power on** - Device starts automatically
 2. **WiFi connection** - Searches for configured networks
 3. **Synchronization** - Gets time via NTP
-4. **Weather data** - Downloads from OpenWeatherMap
+4. **Weather data** - Downloads from WeatherAPI
 5. **History** - Saves reading to local history
 6. **Display** - Shows configured screen (main or last visited)
 7. **Web server** - Available for configuration at http://[LOCAL_IP]
@@ -593,7 +593,7 @@ Main Screen (SCREEN_MAIN)
 
 **Access**: Touch the RIGHT half of the graphs in main screen.
 
-**Note**: These graphs show TRENDS (future predictions) from OpenWeatherMap API, not actual historical data.
+**Note**: These graphs show TRENDS (future predictions) from WeatherAPI API, not actual historical data.
 
 ### 7.6 Screen 4: System Information
 
@@ -613,11 +613,11 @@ Shows actual historical data recorded by the device.
 
 ---
 
-## 8. OpenWeatherMap API
+## 8. WeatherAPI API
 
 ### 8.1 Getting an API Key
 
-1. Go to https://openweathermap.org/
+1. Go to https://www.weatherapi.com/
 2. Create a free account
 3. Go to "API Keys" in profile
 4. Copy or generate a new key
@@ -629,7 +629,7 @@ Shows actual historical data recorded by the device.
 | Calls/minute | 60 |
 | Calls/month | 1,000,000 |
 | Historical data | No |
-| Forecast | 5 days / 3 hours |
+| Forecast | 3 days / 3 hours |
 
 ### 8.3 Endpoints Used
 
@@ -653,7 +653,7 @@ Parameters:
   appid={api_key}
   units=metric|imperial
   lang={language_code}
-  cnt=40  (8 readings/day x 5 days)
+  cnt=40  (8 readings/day x 3 days)
 ```
 
 ---
@@ -716,7 +716,7 @@ Average: ~0.1mA (with 2000mAh battery = ~20,000 hours)
 **Symptoms**: Blank screen or "?"
 
 **Solutions**:
-1. Verify OpenWeatherMap API Key
+1. Verify WeatherAPI API Key
 2. Verify location coordinates
 3. Verify internet connection
 4. Check Serial Monitor for errors
@@ -920,7 +920,7 @@ Style is configured from web interface (System Section -> Weather Narrative):
 
 ##### Data Used
 
-AI generates text using real OpenWeatherMap data (doesn't invent numbers):
+AI generates text using real WeatherAPI data (doesn't invent numbers):
 - Current temperature and feels like
 - Humidity and atmospheric pressure
 - Sky condition (cloudy, sunny, etc.)
@@ -1009,7 +1009,7 @@ The system supports 3 configurable languages:
 | Text | Spanish | English | French |
 |------|---------|---------|--------|
 | Conditions | Condiciones Actuales | Current Conditions | Conditions Actuelles |
-| Forecast | Pronostico 5 Dias | 5-Day Forecast | Previsions 5 Jours |
+| Forecast | Pronostico 5 Dias | 3-Day Forecast | Previsions 5 Jours |
 | Trends | Tendencias del Clima | Weather Trends | Tendances Meteo |
 | History | Historial | History | Historique |
 | System Info | Info del Sistema | System Info | Info Systeme |

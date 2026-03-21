@@ -9,7 +9,7 @@
 5. [Configuracion](#5-configuracion)
 6. [Uso del Dispositivo](#6-uso-del-dispositivo)
 7. [Pantallas de Navegacion](#7-pantallas-de-navegacion)
-8. [API OpenWeatherMap](#8-api-openweathermap)
+8. [API WeatherAPI](#8-api-openweathermap)
 9. [Gestion de Energia](#9-gestion-de-energia)
 10. [Carcasa Impresa en 3D](#10-carcasa-impresa-en-3d)
 11. [Solucion de Problemas](#11-solucion-de-problemas)
@@ -26,7 +26,7 @@
 
 ### 1.1 Descripcion General
 
-La Estacion Meteorologica LilyGo EPD 4.7" es un dispositivo basado en ESP32-S3 que muestra informacion meteorologica en tiempo real obtenida de OpenWeatherMap. Utiliza una pantalla e-paper (tinta electronica) de 4.7 pulgadas que ofrece excelente visibilidad bajo cualquier condicion de luz y bajo consumo de energia.
+La Estacion Meteorologica LilyGo EPD 4.7" es un dispositivo basado en ESP32-S3 que muestra informacion meteorologica en tiempo real obtenida de WeatherAPI. Utiliza una pantalla e-paper (tinta electronica) de 4.7 pulgadas que ofrece excelente visibilidad bajo cualquier condicion de luz y bajo consumo de energia.
 
 ### 1.2 Caracteristicas Principales
 
@@ -233,9 +233,9 @@ El display soporta 16 niveles de gris definidos en el codigo:
 ### 3.2 Estructura de Archivos
 
 ```
-LilyGo-EPD-4-7-OWM-Weather-Display/
+LilyGo-EPD-4-7-WeatherAPI-Touch/
 |
-+-- LilyGo-EPD-4-7-OWM-Weather-Display.ino  # Sketch principal
++-- LilyGo-EPD-4-7-WeatherAPI-Touch.ino  # Sketch principal
 |
 +-- owm_credentials.h     # Credenciales WiFi y API (valores por defecto)
 |
@@ -295,7 +295,7 @@ La configuracion se almacena en el namespace "weather" de ESP32 Preferences:
 | ssid1, pass1 | String | Red WiFi principal |
 | ssid2, pass2 | String | Red WiFi secundaria |
 | ssid3, pass3 | String | Red WiFi terciaria |
-| apikey | String | API Key de OpenWeatherMap |
+| apikey | String | API Key de WeatherAPI |
 | fcdays | Int | Dias de pronostico (3 o 5) |
 | city | String | Nombre de la ciudad |
 | lat, lon | String | Coordenadas geograficas |
@@ -385,7 +385,7 @@ const WiFiCredentials wifiNetworks[] = {
   {"RedTerciaria", "tercerpass"},
 };
 
-// API OpenWeatherMap
+// API WeatherAPI
 String apikey = "tu_api_key_aqui";
 
 // API Groq (para Clima Narrativo - gratis en console.groq.com)
@@ -448,8 +448,8 @@ La pagina web esta organizada en 4 pestanas:
 - **Red Terciaria**: SSID y contrasena (opcional)
 
 #### Tab 2: Clima
-- **API Key**: Clave de OpenWeatherMap
-- **Dias de Pronostico**: 3 o 5 dias
+- **API Key**: Clave de WeatherAPI
+- **Dias de Pronostico**: 3 dias
 - **Ciudad**: Nombre para mostrar
 - **Latitud/Longitud**: Coordenadas exactas
 - **Hemisferio**: Norte o Sur (afecta fases lunares)
@@ -559,7 +559,7 @@ Durante las horas de "DUERME", el dispositivo:
 1. **Encendido** - El dispositivo inicia automaticamente
 2. **Conexion WiFi** - Busca redes configuradas
 3. **Sincronizacion** - Obtiene hora via NTP
-4. **Datos clima** - Descarga de OpenWeatherMap
+4. **Datos clima** - Descarga de WeatherAPI
 5. **Historial** - Guarda lectura en el historial local
 6. **Visualizacion** - Muestra la pantalla configurada (principal o la ultima visitada)
 7. **Servidor web** - Disponible para configuracion en http://[IP_LOCAL]
@@ -729,7 +729,7 @@ Cada valor principal (temperatura, presion, humedad) incluye una flecha indicand
 +-----------------------------------------------+
 |  [Fecha]  @ [Hora]                            |
 +-----------------------------------------------+
-|            PRONOSTICO 5 DIAS                  |
+|            PRONOSTICO 3 DIAS                  |
 +-----------------------------------------------+
 |              Proximas 24 Horas                |
 | [09:00][12:00][15:00][18:00][21:00][00:00]... |
@@ -737,7 +737,7 @@ Cada valor principal (temperatura, presion, humedad) incluye una flecha indicand
 |  25/22  28/24  27/23  25/22  24/21  23/20     |
 |         (8 columnas de 3 horas)               |
 +-----------------------------------------------+
-|            Perspectiva 5 Dias                 |
+|            Perspectiva 3 Dias                 |
 |  [Lun]    [Mar]    [Mie]    [Jue]    [Vie]    |
 |  [ico]    [ico]    [ico]    [ico]    [ico]    |
 |  30/22    28/21    27/20    29/22    31/23    |
@@ -767,13 +767,13 @@ Cada valor principal (temperatura, presion, humedad) incluye una flecha indicand
 |  |__/  \__/  \____      || ||  |  ||  |      ||
 |                                               |
 +-----------------------------------------------+
-|            Proximos 5 dias                    |
+|            Proximos 3 dias                    |
 +-----------------------------------------------+
 ```
 
 **Acceso**: Tocar la mitad DERECHA de las graficas en la pantalla principal.
 
-**Nota**: Estas graficas muestran TENDENCIAS (predicciones futuras) obtenidas de la API de OpenWeatherMap, no datos historicos reales.
+**Nota**: Estas graficas muestran TENDENCIAS (predicciones futuras) obtenidas de la API de WeatherAPI, no datos historicos reales.
 
 ### 7.6 Pantalla 4: Informacion del Sistema
 
@@ -790,7 +790,7 @@ La seccion de Informacion consta de **5 sub-pantallas navegables** (0/4 a 4/4). 
 | Version: v2.0      | Idioma: Espanol          |
 | Compilado: Mar 2026| Unidades: Metrico        |
 | Free Heap: 245 KB  | Hemisferio: Norte        |
-| Total Heap: 320 KB | Pronostico: 5 dias       |
+| Total Heap: 320 KB | Pronostico: 3 dias       |
 | PSRAM: 4096 KB     |                          |
 |                    | Intervalo: 30 min        |
 | WiFi: MiRedWiFi    | Timeout: 30 seg          |
@@ -850,7 +850,7 @@ La seccion de Informacion consta de **5 sub-pantallas navegables** (0/4 a 4/4). 
 +-----------------------------------------------+
 |       CARACTERISTICAS - SOFTWARE         >>   |
 +===============================================+
-| Pantallas: 13 navegables    | API: OpenWeatherMap      |
+| Pantallas: 13 navegables    | API: WeatherAPI      |
 | Multi-WiFi: Hasta 3 redes   |                          |
 | Historial SD: ~1 año datos  | Clima: /weather          |
 | Historial Int: ~7 dias FFat | Pronostico: /forecast    |
@@ -949,7 +949,7 @@ El codigo QR enlaza a github.com/xe1e para acceso rapido al repositorio.
 |  |__/  \__/  \____      || ||  |  ||  |      ||
 |                                               |
 +-----------------------------------------------+
-|     150 lecturas / 2.5 dias [SD: 52560]       |
+|     150 lecturas / 2.3 dias [SD: 52560]       |
 +-----------------------------------------------+
 ```
 
@@ -961,7 +961,7 @@ El footer muestra el conteo de lecturas en buffer y, si hay SD insertada, el tot
 |-------------------------|------------------------|
 | Datos de TENDENCIAS (predicciones) | Datos HISTORICOS reales |
 | Obtenidos de la API | Grabados por el dispositivo |
-| Proximos 5 dias | Ultimas 48h o 1 semana |
+| Proximos 3 dias | Ultimas 48h o 1 semana |
 | Se actualizan con cada llamada API | Se acumulan con el tiempo |
 
 #### Boton Toggle 48H / 1 Semana
@@ -1088,11 +1088,11 @@ La pantalla mostrada al despertar depende de la configuracion "Al dormir" en Tab
 
 ---
 
-## 8. API OpenWeatherMap
+## 8. API WeatherAPI
 
 ### 8.1 Obtencion de API Key
 
-1. Ir a https://openweathermap.org/
+1. Ir a https://www.weatherapi.com/
 2. Crear cuenta gratuita
 3. Ir a "API Keys" en el perfil
 4. Copiar o generar nueva clave
@@ -1104,7 +1104,7 @@ La pantalla mostrada al despertar depende de la configuracion "Al dormir" en Tab
 | Llamadas/minuto | 60 |
 | Llamadas/mes | 1,000,000 |
 | Datos historicos | No |
-| Pronostico | 5 dias / 3 horas |
+| Pronostico | 3 dias / 3 horas |
 
 ### 8.3 Endpoints Utilizados
 
@@ -1128,7 +1128,7 @@ Parametros:
   appid={api_key}
   units=metric|imperial
   lang={codigo_idioma}
-  cnt=40  (8 lecturas/dia x 5 dias)
+  cnt=40  (8 lecturas/dia x 3 dias)
 ```
 
 ### 8.4 Codigos de Iconos
@@ -1323,7 +1323,7 @@ Soportes:        Activados (especialmente para Frame y Top)
 **Sintomas**: Pantalla en blanco o con "?"
 
 **Soluciones**:
-1. Verificar API Key de OpenWeatherMap
+1. Verificar API Key de WeatherAPI
 2. Verificar coordenadas de ubicacion
 3. Verificar conexion a internet
 4. Revisar Serial Monitor para errores
@@ -1560,7 +1560,7 @@ La aplicacion Android se encuentra en la carpeta `android-app/` del repositorio.
 | Categoria | Parametros |
 |-----------|------------|
 | WiFi | Hasta 3 redes (SSID + password) |
-| API | API Key de OpenWeatherMap |
+| API | API Key de WeatherAPI |
 | Ubicacion | Ciudad, Latitud, Longitud |
 | Regional | Idioma, Hemisferio, Unidades |
 | Zona Horaria | Timezone, GMT offset, DST offset |
@@ -1703,7 +1703,7 @@ El estilo se configura desde la interfaz web (Seccion Sistema → Clima Narrativ
 
 ##### Datos Utilizados
 
-La IA genera el texto usando datos reales de OpenWeatherMap (no inventa numeros):
+La IA genera el texto usando datos reales de WeatherAPI (no inventa numeros):
 - Temperatura actual y sensacion termica
 - Humedad y presion atmosferica
 - Condicion del cielo (nublado, soleado, etc.)
@@ -1792,7 +1792,7 @@ El sistema soporta 3 idiomas configurables:
 | Texto | Espanol | English | Francais |
 |-------|---------|---------|----------|
 | Condiciones | Condiciones Actuales | Current Conditions | Conditions Actuelles |
-| Pronostico | Pronostico 5 Dias | 5-Day Forecast | Previsions 5 Jours |
+| Pronostico | Pronostico 3 Dias | 5-Day Forecast | Previsions 5 Jours |
 | Tendencias | Tendencias del Clima | Weather Trends | Tendances Meteo |
 | Historial | Historial | History | Historique |
 | Info Sistema | Info del Sistema | System Info | Info Systeme |
