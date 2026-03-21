@@ -2538,8 +2538,8 @@ void DisplayCurrentDetailScreen() {
 
   // Values
   setFont(OpenSans16B);
-  drawString(sunriseX, sunriseValY, ConvertUnixTime(WxConditions[0].Sunrise).substring(0, 5), CENTER);
-  drawString(sunsetX, sunsetValY, ConvertUnixTime(WxConditions[0].Sunset).substring(0, 5), CENTER);
+  drawString(sunriseX, sunriseValY, convertTo24Hour(WxConditions[0].SunriseStr), CENTER);
+  drawString(sunsetX, sunsetValY, convertTo24Hour(WxConditions[0].SunsetStr), CENTER);
   drawString(rainX, rainValY, String(WxForecast[0].Pop * 100, 0) + "%", CENTER);
 
   // AQI valor
