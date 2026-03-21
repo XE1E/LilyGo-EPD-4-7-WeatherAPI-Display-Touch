@@ -1364,23 +1364,27 @@ void DrawMoonFromAPI(int x, int y, int diameter, int illumination, String phase,
   // Convert illumination (0-100%) to phase (0.0-1.0)
   // Waxing: 0 -> 0.5 (new to full), Waning: 0.5 -> 1.0 (full to new)
   double Phase;
-  phase.toLowerCase();
+  String phaseLower = phase;
+  phaseLower.toLowerCase();
 
-  if (phase.indexOf("waxing") >= 0 || phase == "first quarter") {
-    // Waxing: illumination 0-100 maps to phase 0.0-0.5
-    Phase = (illumination / 100.0) * 0.5;
-  } else if (phase.indexOf("waning") >= 0 || phase == "last quarter") {
-    // Waning: illumination 100-0 maps to phase 0.5-1.0
-    Phase = 0.5 + ((100 - illumination) / 100.0) * 0.5;
-  } else if (phase == "full moon") {
-    Phase = 0.5;
+  if (phaseLower.indexOf("waxing") >= 0 || phaseLower.indexOf("first quarter") >= 0) {
+    // Waxing (lit on RIGHT in northern hemisphere): Phase > 0.5
+    // 5% illum → Phase 0.525 (small crescent right), 100% → Phase 1.0 (full)
+    Phase = 0.5 + (illumination / 100.0) * 0.5;
+  } else if (phaseLower.indexOf("waning") >= 0 || phaseLower.indexOf("last quarter") >= 0 || phaseLower.indexOf("third quarter") >= 0) {
+    // Waning (lit on LEFT in northern hemisphere): Phase < 0.5
+    // 100% illum → Phase 0 (full), 5% → Phase 0.475 (small crescent left)
+    Phase = 0.5 - (illumination / 100.0) * 0.5;
+  } else if (phaseLower.indexOf("full") >= 0) {
+    Phase = 0.0;  // Full moon = all lit
   } else {
-    // New moon
-    Phase = 0.0;
+    // New moon = all dark
+    Phase = 0.5;
   }
 
-  hemisphere.toLowerCase();
-  if (hemisphere == "south") Phase = 1 - Phase;
+  String hemiLower = hemisphere;
+  hemiLower.toLowerCase();
+  if (hemiLower == "south") Phase = 1 - Phase;
 
   // Draw dark part of moon first
   fillCircle(x + diameter - 1, y + diameter, diameter / 2 + 1, DarkGrey);
