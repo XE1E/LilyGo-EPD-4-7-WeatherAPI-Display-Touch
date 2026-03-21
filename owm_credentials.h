@@ -25,9 +25,9 @@ const WiFiCredentials wifiNetworks[] = {
 
 const int wifiNetworkCount = sizeof(wifiNetworks) / sizeof(wifiNetworks[0]);
 
-// Get API key by signing up for a free developer account at https://openweathermap.org/
-String apikey       = "YOUR_OPENWEATHERMAP_API_KEY";              // See: https://openweathermap.org/
-const char server[] = "api.openweathermap.org";
+// WeatherAPI.com - Get free API key at https://www.weatherapi.com/
+String apikey       = "YOUR_WEATHERAPI_KEY";
+const char server[] = "api.weatherapi.com";
 
 // Groq API key for weather narrative generation (free tier)
 // Get key at: console.groq.com
@@ -38,9 +38,8 @@ String City             = "Your City";                            // Your home c
 String Latitude         = "0.0000";                               // Latitude of your location in decimal degrees
 String Longitude        = "0.0000";                               // Longitude of your location in decimal degrees
 
-String Language         = "ES";                            // NOTE: Only the weather description is translated by OWM
-                                                           // Examples: Arabic (AR) Czech (CZ) English (EN) Greek (EL) Persian(Farsi) (FA) Galician (GL) Hungarian (HU) Japanese (JA)
-                                                           // Korean (KR) Latvian (LA) Lithuanian (LT) Macedonian (MK) Slovak (SK) Slovenian (SL) Vietnamese (VI)
+String Language         = "es";                            // WeatherAPI language codes: es, en, fr, de, it, pt, etc.
+                                                           // Full list at: https://www.weatherapi.com/docs/#intro-request
 String Hemisphere       = "north";                         // or "south"
 String Units            = "M";                             // Use 'M' for Metric or I for Imperial
 
