@@ -234,8 +234,8 @@ int drawNarrativeText(int centerX, int startY, int maxWidth, int lineHeight, con
   int lines = 0;
   int currentY = startY;
 
-  setFont(OpenSans10B);
-  int charWidth = 9;  // Smaller font for more text
+  setFont(OpenSans8B);
+  int charWidth = 7;  // Smaller font for more text
 
   int charsPerLine = maxWidth / charWidth;
   if (charsPerLine < 10) charsPerLine = 10;
@@ -310,7 +310,7 @@ void DisplayWeatherNarrativeScreen() {
   // Narrative text
   int textStartY = frameY + 100;
   int textMaxWidth = frameW - 214;  // ~69 chars per line
-  drawNarrativeText(SCREEN_WIDTH / 2, textStartY, textMaxWidth, 36, weatherNarrative.text, 9);
+  drawNarrativeText(SCREEN_WIDTH / 2, textStartY, textMaxWidth, 32, weatherNarrative.text, 11);
 
   // Footer hint - multilingual
   const char* footer[] = {"Toca para volver", "Touch to return", "Touchez pour revenir"};
