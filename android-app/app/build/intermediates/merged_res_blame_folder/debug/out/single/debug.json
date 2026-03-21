@@ -1,0 +1,22 @@
+[
+    {
+        "merged": "net.xe1e.weatherstation.app-merged_res-4:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "net.xe1e.weatherstation.app-main-6:/mipmap-anydpi-v26/ic_launcher_round.xml"
+    },
+    {
+        "merged": "net.xe1e.weatherstation.app-merged_res-4:/layout_activity_config.xml.flat",
+        "source": "net.xe1e.weatherstation.app-main-6:/layout/activity_config.xml"
+    },
+    {
+        "merged": "net.xe1e.weatherstation.app-merged_res-4:/layout_activity_main.xml.flat",
+        "source": "net.xe1e.weatherstation.app-main-6:/layout/activity_main.xml"
+    },
+    {
+        "merged": "net.xe1e.weatherstation.app-merged_res-4:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "net.xe1e.weatherstation.app-main-6:/mipmap-anydpi-v26/ic_launcher.xml"
+    },
+    {
+        "merged": "net.xe1e.weatherstation.app-merged_res-4:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "net.xe1e.weatherstation.app-main-6:/drawable/ic_launcher_foreground.xml"
+    }
+]

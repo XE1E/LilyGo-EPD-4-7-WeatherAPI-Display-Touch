@@ -1,0 +1,10 @@
+[
+    {
+        "merged": "net.xe1e.weatherstation.app-mergeDebugResources-3:/layout/activity_main.xml",
+        "source": "net.xe1e.weatherstation.app-main-6:/layout/activity_main.xml"
+    },
+    {
+        "merged": "net.xe1e.weatherstation.app-mergeDebugResources-3:/layout/activity_config.xml",
+        "source": "net.xe1e.weatherstation.app-main-6:/layout/activity_config.xml"
+    }
+]

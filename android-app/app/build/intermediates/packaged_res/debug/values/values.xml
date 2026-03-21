@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="hemispheres">
+        <item>Norte</item>
+        <item>Sur</item>
+    </string-array>
+    <string-array name="languages">
+        <item>Español</item>
+        <item>English</item>
+        <item>Français</item>
+    </string-array>
+    <string-array name="units">
+        <item>Métrico (°C, km)</item>
+        <item>Imperial (°F, mi)</item>
+    </string-array>
+    <color name="ic_launcher_background">#1976D2</color>
+    <string name="app_name">Weather Station BLE</string>
+    <string name="title_config">Configuración</string>
+    <style name="Theme.WeatherStationBLE" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">#1976D2</item>
+        <item name="colorPrimaryVariant">#1565C0</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+        <item name="colorSecondary">#03DAC6</item>
+        <item name="colorOnSecondary">@android:color/black</item>
+        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+    </style>
+</resources>
