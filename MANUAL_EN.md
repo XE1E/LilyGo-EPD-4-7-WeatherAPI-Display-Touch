@@ -1022,7 +1022,64 @@ The system supports 3 configurable languages:
 | 48 Hours | 48H | 48H | 48H |
 | 1 Week | 1 Semana | 1 Week | 1 Semaine |
 
-### 13.6 License and Credits
+### 13.6 History Storage System
+
+The device uses two storage systems for weather history:
+
+#### Internal Storage (FFat)
+- ESP32 internal flash memory
+- Capacity: **1,000 readings** (~7 days at 10 min intervals)
+- Works as circular buffer (when full, deletes oldest)
+- Always active as backup
+
+#### External Storage (SD)
+- microSD card (optional but recommended)
+- Capacity: **52,560 readings** (~1 year at 10 min intervals)
+- CSV format readable from any computer
+- File: `/weather_history.csv`
+
+#### System Behavior
+
+| Scenario | Behavior |
+|----------|----------|
+| **SD inserted** | Records to BOTH: FFat (backup) + SD (extended history) |
+| **No SD** | Records to FFat only (max ~7 days) |
+| **FFat full** | Deletes oldest reading, continues recording (circular buffer) |
+| **SD full** | Auto-trims, keeps last 52,560 readings |
+
+#### Sync When Inserting SD
+
+When an SD card is inserted and the device restarts:
+
+1. Compares data count in FFat vs SD
+2. **Loads from whichever has MORE data**
+3. If FFat has more than SD → **Migrates data from FFat to SD**
+4. This ensures no data is lost while recording without SD
+
+#### Practical Example
+
+```
+Day 1-5:   SD inserted, records to SD + FFat
+Day 6-10:  No SD, records to FFat only
+Day 11:    Insert SD, on restart:
+           - FFat has days 6-10 data
+           - SD has days 1-5 data
+           - System migrates FFat → SD
+           - SD now has days 1-10
+```
+
+#### CSV File Structure
+
+```csv
+timestamp,temperature,humidity,pressure,rainfall,feelslike
+1710456000,25.5,65,1013,0.00,26.2
+1710456600,25.8,64,1013,0.00,26.5
+...
+```
+
+Data can be opened with Excel, Google Sheets, or any text editor.
+
+### 13.7 License and Credits
 
 **Original Software**: David Bird 2021
 **Modifications**: XE1E 2024

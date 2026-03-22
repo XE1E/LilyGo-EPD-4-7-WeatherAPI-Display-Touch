@@ -1022,7 +1022,64 @@ Le systeme supporte 3 langues configurables:
 | 48 Heures | 48H | 48H | 48H |
 | 1 Semaine | 1 Semana | 1 Week | 1 Semaine |
 
-### 13.6 Licence et Credits
+### 13.6 Systeme de Stockage de l'Historique
+
+L'appareil utilise deux systemes de stockage pour l'historique meteo:
+
+#### Stockage Interne (FFat)
+- Memoire flash interne de l'ESP32
+- Capacite: **1 000 lectures** (~7 jours a intervalles de 10 min)
+- Fonctionne comme tampon circulaire (quand plein, supprime le plus ancien)
+- Toujours actif comme sauvegarde
+
+#### Stockage Externe (SD)
+- Carte microSD (optionnelle mais recommandee)
+- Capacite: **52 560 lectures** (~1 an a intervalles de 10 min)
+- Format CSV lisible depuis n'importe quel ordinateur
+- Fichier: `/weather_history.csv`
+
+#### Comportement du Systeme
+
+| Scenario | Comportement |
+|----------|--------------|
+| **SD inseree** | Enregistre dans LES DEUX: FFat (sauvegarde) + SD (historique etendu) |
+| **Sans SD** | Enregistre dans FFat uniquement (max ~7 jours) |
+| **FFat plein** | Supprime la lecture la plus ancienne, continue l'enregistrement (tampon circulaire) |
+| **SD pleine** | Coupe automatiquement, conserve les 52 560 dernieres lectures |
+
+#### Synchronisation lors de l'Insertion de la SD
+
+Lorsqu'une carte SD est inseree et que l'appareil redemarre:
+
+1. Compare la quantite de donnees dans FFat vs SD
+2. **Charge depuis celui qui a LE PLUS de donnees**
+3. Si FFat a plus que SD → **Migre les donnees de FFat vers SD**
+4. Cela garantit qu'aucune donnee n'est perdue lors de l'enregistrement sans SD
+
+#### Exemple Pratique
+
+```
+Jour 1-5:   SD inseree, enregistre sur SD + FFat
+Jour 6-10:  Sans SD, enregistre sur FFat uniquement
+Jour 11:    Inserez la SD, au redemarrage:
+            - FFat contient les donnees des jours 6-10
+            - SD contient les donnees des jours 1-5
+            - Le systeme migre FFat → SD
+            - SD contient maintenant les jours 1-10
+```
+
+#### Structure du Fichier CSV
+
+```csv
+timestamp,temperature,humidity,pressure,rainfall,feelslike
+1710456000,25.5,65,1013,0.00,26.2
+1710456600,25.8,64,1013,0.00,26.5
+...
+```
+
+Les donnees peuvent etre ouvertes avec Excel, Google Sheets ou n'importe quel editeur de texte.
+
+### 13.7 Licence et Credits
 
 **Logiciel Original**: David Bird 2021
 **Modifications**: XE1E 2024

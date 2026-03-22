@@ -419,8 +419,10 @@ const char* TXT_VISIBILITY_ARR[] = { "Visibilidad", "Visibility", "Visibilite" }
 const char* TXT_CLOUDINESS_ARR[] = { "Nubosidad", "Cloudiness", "Nebulosite" };
 const char* TXT_WIND_ARR[] = { "Viento", "Wind", "Vent" };
 const char* TXT_WIND_DIR_ARR[] = { "Direccion Viento", "Wind Direction", "Direction Vent" };
+const char* TXT_GUSTS_ARR[] = { "Rafagas", "Gusts", "Rafales" };
 const char* TXT_RAIN_PROB_ARR[] = { "Prob. Lluvia", "Rain Prob.", "Prob. Pluie" };
 const char* TXT_FEELS_LIKE_ARR[] = { "Sensacion termica", "Feels like", "Ressenti" };
+const char* TXT_DEWPOINT_ARR[] = { "Punto de rocio", "Dew Point", "Point de rosee" };
 const char* TXT_UV_INDEX_ARR[] = { "Indice UV", "UV Index", "Indice UV" };
 const char* TXT_AIR_QUALITY_ARR[] = { "Calidad del Aire", "Air Quality", "Qualite de l'Air" };
 const char* TXT_AQI_ARR[] = { "ICA", "AQI", "IQA" };
@@ -448,8 +450,10 @@ const char* TXT_UV_EXT_S_ARR[] = { "Extr.", "Extr.", "Extr." };
 #define TXT_CLOUDINESS String(TXT_CLOUDINESS_ARR[currentLang])
 #define TXT_WIND String(TXT_WIND_ARR[currentLang])
 #define TXT_WIND_DIR String(TXT_WIND_DIR_ARR[currentLang])
+#define TXT_GUSTS String(TXT_GUSTS_ARR[currentLang])
 #define TXT_RAIN_PROB String(TXT_RAIN_PROB_ARR[currentLang])
 #define TXT_FEELS_LIKE String(TXT_FEELS_LIKE_ARR[currentLang])
+#define TXT_DEWPOINT String(TXT_DEWPOINT_ARR[currentLang])
 #define TXT_UV_INDEX String(TXT_UV_INDEX_ARR[currentLang])
 #define TXT_AIR_QUALITY String(TXT_AIR_QUALITY_ARR[currentLang])
 #define TXT_AQI String(TXT_AQI_ARR[currentLang])

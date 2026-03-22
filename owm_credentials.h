@@ -26,7 +26,7 @@ const WiFiCredentials wifiNetworks[] = {
 const int wifiNetworkCount = sizeof(wifiNetworks) / sizeof(wifiNetworks[0]);
 
 // WeatherAPI.com - Get free API key at https://www.weatherapi.com/
-String apikey       = "222dd797d9d14c8993f165243260703";
+String apikey       = "YOUR_WEATHERAPI_KEY";
 const char server[] = "api.weatherapi.com";
 
 // Groq API key for weather narrative generation (free tier)
