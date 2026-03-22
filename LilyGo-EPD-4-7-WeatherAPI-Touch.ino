@@ -3078,15 +3078,15 @@ void DisplayInfoFeatures2Screen() {
 
   // Right column - API
   y = 120;
-  drawString(col2, y, "API: OpenWeatherMap", LEFT);
+  drawString(col2, y, "API: WeatherAPI.com", LEFT);
   y += lineH * 2;
-  drawString(col2, y, "Clima: /weather", LEFT);
+  drawString(col2, y, "Endpoint: /v1/forecast.json", LEFT);
   y += lineH;
-  drawString(col2, y, "Pronostico: /forecast 5d/3h", LEFT);
+  drawString(col2, y, "Pronostico: 3 dias", LEFT);
   y += lineH;
-  drawString(col2, y, "UV Index: /uvi", LEFT);
+  drawString(col2, y, "UV/AQI: Incluido", LEFT);
   y += lineH;
-  drawString(col2, y, "Calidad Aire: /air_pollution", LEFT);
+  drawString(col2, y, "Una llamada por actualizacion", LEFT);
   y += lineH * 2;
   drawString(col2, y, "Limite gratis: 1M llamadas/mes", LEFT);
   y += lineH * 2;
