@@ -688,6 +688,9 @@ void applyStoredConfig() {
   if (strlen(config.api_key) > 0) {
     apikey = String(config.api_key);
   }
+  if (strlen(config.groq_apikey) > 0) {
+    groq_apikey = String(config.groq_apikey);
+  }
   if (strlen(config.city) > 0) {
     City = String(config.city);
   }
