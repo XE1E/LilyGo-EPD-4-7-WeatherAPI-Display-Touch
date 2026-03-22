@@ -2391,7 +2391,7 @@ void DisplayCurrentDetailScreen() {
   // Title
   setFont(OpenSans18B);
   drawString(SCREEN_WIDTH / 2, 50, TXT_CURRENT_CONDITIONS, CENTER);
-  drawFastHLine(150, 85, SCREEN_WIDTH - 300, Grey);
+  drawFastHLine(150, 85, SCREEN_WIDTH - 300, DarkGrey);
 
   String tempUnit = (Units == "M") ? "°C" : "°F";
 
@@ -2428,7 +2428,7 @@ void DisplayCurrentDetailScreen() {
   // Pressure - value large, unit small aligned at bottom
   setFont(OpenSans24B);
   float pressValue = (Units == "M") ? WxConditions[0].Pressure : WxConditions[0].Pressure * HPA_TO_INHG;
-  String pressUnit = (Units == "M") ? "hPa" : "inHg";
+  String pressUnit = (Units == "M") ? (currentLang == 0 ? "mb" : "hPa") : "inHg";
   drawString(col2X, topY, String(pressValue, 0), RIGHT);
   setFont(OpenSans14B);
   drawString(col2X + 5, topY + 10, pressUnit, LEFT);
@@ -2474,7 +2474,7 @@ void DisplayCurrentDetailScreen() {
   drawString(col3X - 15, topY + 50, TXT_HUMIDITY, CENTER);
 
   // === MIDDLE SECTION: Weather Icon + Details ===
-  drawFastHLine(50, 190, SCREEN_WIDTH - 100, Grey);
+  drawFastHLine(50, 190, SCREEN_WIDTH - 100, DarkGrey);
 
   // Left: Weather icon (extra large)
   iconScaleOverride = XLarge;
@@ -2485,64 +2485,63 @@ void DisplayCurrentDetailScreen() {
   setFont(OpenSans10B);
   drawString(220, 385, TitleCase(WxConditions[0].Forecast0), CENTER);
 
-  // Right: Wind, Visibility, UV Index, Cloudiness, Feels Like (5 rows)
+  // Right: Wind, Gusts, Visibility, Cloudiness, Feels Like, Dew Point (6 rows)
   int rightColLabel = 645, rightColValue = 685;
-  int row1Y = 210, row2Y = 248, row3Y = 286, row4Y = 324, row5Y = 362;  // row3Y (UV) +5px
+  int row1Y = 210, row2Y = 248, row3Y = 286, row4Y = 324, row5Y = 362, row6Y = 400;
 
   setFont(OpenSans12B);
   drawString(rightColLabel, row1Y, TXT_WIND + ":", RIGHT);
-  drawString(rightColLabel, row2Y, TXT_VISIBILITY + ":", RIGHT);
-  drawString(rightColLabel, row3Y, TXT_UV_INDEX + ":", RIGHT);
+  drawString(rightColLabel, row2Y - 8, TXT_GUSTS + ":", RIGHT);
+  drawString(rightColLabel, row3Y, TXT_VISIBILITY + ":", RIGHT);
   drawString(rightColLabel, row4Y, TXT_CLOUDINESS + ":", RIGHT);
   drawString(rightColLabel, row5Y, TXT_FEELS_LIKE + ":", RIGHT);
+  drawString(rightColLabel, row6Y, TXT_DEWPOINT + ":", RIGHT);
 
-  setFont(OpenSans14B);  // Reduced from 18B
+  setFont(OpenSans14B);
   float visKm = WxConditions[0].Visibility / 1000.0;
   String windDir = WindDegToOrdinalDirection(WxConditions[0].Winddir);
-  drawString(rightColValue, row1Y - 3, windDir + " - " + String(WxConditions[0].Windspeed, 1) + ((Units == "M") ? " m/s" : " mph"), LEFT);
-  drawString(rightColValue, row2Y - 3, String(visKm, 1) + " km", LEFT);
+  drawString(rightColValue, row1Y - 3, windDir + " - " + String(WxConditions[0].Windspeed, 1) + ((Units == "M") ? " km/h" : " mph"), LEFT);
+  drawString(rightColValue, row2Y - 7, String(WxConditions[0].Gust, 1) + ((Units == "M") ? " km/h" : " mph"), LEFT);
+  drawString(rightColValue, row3Y - 3, String(visKm, 1) + " km", LEFT);
+  drawString(rightColValue, row4Y - 3, String(WxConditions[0].Cloudcover) + "%", LEFT);
+  drawString(rightColValue, row5Y - 3, String(WxConditions[0].Feelslike, 1) + tempUnit, LEFT);
+  drawString(rightColValue, row6Y - 3, String(WxConditions[0].Dewpoint, 1) + tempUnit, LEFT);
 
-  // UV Index with level description
-  String uvLevel;
+  // === BOTTOM SECTION: Sunrise, Sunset, Rain Prob, UV, AQI (5 columns) ===
+  int lineY = 450;
+  drawFastHLine(50, lineY, SCREEN_WIDTH - 100, DarkGrey);
+
+  // X positions for 5 columns evenly distributed
+  int sunriseX = 100;
+  int sunsetX = 290;
+  int rainX = 480;
+  int uvX = 670;
+  int aqiX = 860;
+
+  // Y positions
+  int valY = 470;
+  int labelOffsetY = 33;
+
+  // Values
+  setFont(OpenSans12B);
+  drawString(sunriseX, valY, convertTo24Hour(WxConditions[0].SunriseStr), CENTER);
+  drawString(sunsetX, valY, convertTo24Hour(WxConditions[0].SunsetStr), CENTER);
+  setFont(OpenSans16B);
+  drawString(rainX, valY, String(WxForecast[0].Pop * 100, 0) + "%", CENTER);
+
+  // UV with level (uppercase, smaller font, raised 5px)
+  setFont(OpenSans12B);
   float uv = WxConditions[0].UVIndex;
+  String uvLevel;
   if (uv < 3) uvLevel = " " + TXT_UV_LOW_S;
   else if (uv < 6) uvLevel = " " + TXT_UV_MOD_S;
   else if (uv < 8) uvLevel = " " + TXT_UV_HIGH_S;
   else if (uv < 11) uvLevel = " " + TXT_UV_VHIGH_S;
   else uvLevel = " " + TXT_UV_EXT_S;
-  drawString(rightColValue, row3Y - 6, String(uv, 1) + uvLevel, LEFT);
+  uvLevel.toUpperCase();
+  drawString(uvX, valY - 5, String(uv, 1) + uvLevel, CENTER);
 
-  drawString(rightColValue, row4Y - 3, String(WxConditions[0].Cloudcover) + "%", LEFT);
-  drawString(rightColValue, row5Y - 3, String(WxConditions[0].Feelslike, 1) + tempUnit, LEFT);
-
-  // === BOTTOM SECTION: Sunrise, Sunset, Rain Prob, AQI ===
-  // Individual positions for fine tuning
-  int lineY = 425;                    // Divider line
-  drawFastHLine(50, lineY, SCREEN_WIDTH - 100, Grey);
-
-  // X positions for each column
-  int sunriseX = 130;
-  int sunsetX = 350;
-  int rainX = 570;
-  int aqiX = 820;
-
-  // Y positions for values (adjust individually)
-  int sunriseValY = 450;
-  int sunsetValY = 450;
-  int rainValY = 450;
-  int aqiValY = 439;                  // AQI value raised 6px
-
-  // Y positions for labels
-  int labelOffsetY = 33;              // Distance between value and label (+5px)
-  int aqiLabelOffsetY = 45;           // Specific offset for AQI text (+5px)
-
-  // Values
-  setFont(OpenSans16B);
-  drawString(sunriseX, sunriseValY, convertTo24Hour(WxConditions[0].SunriseStr), CENTER);
-  drawString(sunsetX, sunsetValY, convertTo24Hour(WxConditions[0].SunsetStr), CENTER);
-  drawString(rainX, rainValY, String(WxForecast[0].Pop * 100, 0) + "%", CENTER);
-
-  // AQI valor
+  // AQI (uppercase, smaller font)
   String aqiText;
   switch(WxConditions[0].AQI) {
     case 1: aqiText = TXT_AQI_GOOD; break;
@@ -2552,14 +2551,19 @@ void DisplayCurrentDetailScreen() {
     case 5: aqiText = TXT_AQI_VERY_POOR; break;
     default: aqiText = "--";
   }
-  drawString(aqiX, aqiValY, aqiText, CENTER);
+  aqiText.toUpperCase();
+  drawString(aqiX, valY - 2, aqiText, CENTER);
 
   // Labels
   setFont(OpenSans12B);
-  drawString(sunriseX, sunriseValY + labelOffsetY, TXT_SUNRISE, CENTER);
-  drawString(sunsetX, sunsetValY + labelOffsetY, TXT_SUNSET, CENTER);
-  drawString(rainX, rainValY + labelOffsetY, TXT_RAIN_PROB, CENTER);
-  drawString(aqiX, aqiValY + aqiLabelOffsetY, TXT_AQI, CENTER);
+  drawString(sunriseX, valY + labelOffsetY, TXT_SUNRISE, CENTER);
+  drawString(sunsetX, valY + labelOffsetY, TXT_SUNSET, CENTER);
+  drawString(rainX, valY + labelOffsetY, TXT_RAIN_PROB, CENTER);
+  drawString(uvX, valY + labelOffsetY, TXT_UV_INDEX, CENTER);
+  drawString(aqiX, valY + labelOffsetY, TXT_AQI, CENTER);
+
+  // Status indicators (SD, Battery, WiFi) - same position as main screen
+  DisplayStatusSection(600, 33, wifi_signal);
 }
 
 // Screen: Air Quality Details

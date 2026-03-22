@@ -1805,7 +1805,64 @@ El sistema soporta 3 idiomas configurables:
 | 48 Horas | 48H | 48H | 48H |
 | 1 Semana | 1 Semana | 1 Week | 1 Semaine |
 
-### 13.6 Licencia y Creditos
+### 13.6 Sistema de Almacenamiento de Historial
+
+El dispositivo utiliza dos sistemas de almacenamiento para el historial meteorologico:
+
+#### Almacenamiento Interno (FFat)
+- Memoria flash interna del ESP32
+- Capacidad: **1,000 lecturas** (~7 dias a intervalos de 10 min)
+- Funciona como buffer circular (cuando se llena, borra el mas antiguo)
+- Siempre activo como respaldo
+
+#### Almacenamiento Externo (SD)
+- Tarjeta microSD (opcional pero recomendada)
+- Capacidad: **52,560 lecturas** (~1 año a intervalos de 10 min)
+- Formato CSV legible desde cualquier computadora
+- Archivo: `/weather_history.csv`
+
+#### Comportamiento del Sistema
+
+| Escenario | Comportamiento |
+|-----------|----------------|
+| **Con SD insertada** | Graba en AMBOS: FFat (backup) + SD (historial extendido) |
+| **Sin SD** | Graba solo en FFat (maximo ~7 dias) |
+| **FFat lleno** | Borra lectura mas antigua, continua grabando (buffer circular) |
+| **SD llena** | Recorta automaticamente, conserva ultimas 52,560 lecturas |
+
+#### Sincronizacion al Insertar SD
+
+Cuando se inserta una tarjeta SD y el dispositivo reinicia:
+
+1. Compara cantidad de datos en FFat vs SD
+2. **Carga del que tenga MAS datos**
+3. Si FFat tiene mas que SD → **Migra datos de FFat a SD**
+4. Esto asegura que no se pierdan datos grabados sin SD
+
+#### Ejemplo Practico
+
+```
+Dia 1-5:   SD insertada, graba en SD + FFat
+Dia 6-10:  Sin SD, graba solo en FFat
+Dia 11:    Insertas SD, al reiniciar:
+           - FFat tiene datos dias 6-10
+           - SD tiene datos dias 1-5
+           - Sistema migra FFat → SD
+           - SD ahora tiene dias 1-10
+```
+
+#### Estructura del Archivo CSV
+
+```csv
+timestamp,temperature,humidity,pressure,rainfall,feelslike
+1710456000,25.5,65,1013,0.00,26.2
+1710456600,25.8,64,1013,0.00,26.5
+...
+```
+
+Los datos pueden abrirse con Excel, Google Sheets o cualquier editor de texto.
+
+### 13.7 Licencia y Creditos
 
 **Software Original**: David Bird 2021
 **Modificaciones**: XE1E 2024

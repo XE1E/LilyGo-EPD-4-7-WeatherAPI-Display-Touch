@@ -1,0 +1,22 @@
+# Claude Code
+.claude/
+
+# Android build artifacts
+android-app/.gradle/
+android-app/.idea/
+android-app/app/build/
+android-app/build/
+android-app/gradle/
+android-app/gradlew
+android-app/gradlew.bat
+android-app/local.properties
+*.apk
+
+# IDE
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
