@@ -40,6 +40,7 @@ struct ConfigData {
   char wifi_ssid3[33];
   char wifi_password3[65];
   char api_key[65];
+  char groq_apikey[65];     // Groq API key for AI narrative
   int forecast_days;        // 3 or 5 days forecast
   char city[33];
   char latitude[16];
@@ -300,18 +301,20 @@ const char CONFIG_PAGE[] PROGMEM = R"rawliteral(
       <!-- Weather Tab -->
       <div id="weather" class="panel">
         <div class="card">
-          <div class="card-title">OpenWeatherMap API</div>
+          <div class="card-title">WeatherAPI</div>
           <div class="form-group">
             <label>API Key</label>
             <input type="text" name="apikey" value="%APIKEY%" placeholder="Tu API key" maxlength="64">
-            <div class="hint">Obten tu key gratis en openweathermap.org</div>
+            <div class="hint">Obten tu key gratis en weatherapi.com</div>
           </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Groq API (Narrativa IA)</div>
           <div class="form-group">
-            <label>Dias de Pronostico</label>
-            <select name="forecast_days">
-              <option value="3" %FORECAST3_SEL%>3 Dias</option>
-              <option value="5" %FORECAST5_SEL%>5 Dias</option>
-            </select>
+            <label>API Key</label>
+            <input type="text" name="groqkey" value="%GROQKEY%" placeholder="Tu Groq API key" maxlength="64">
+            <div class="hint">Obten tu key gratis en console.groq.com</div>
           </div>
         </div>
 
@@ -578,6 +581,13 @@ void loadConfig() {
     strlcpy(config.api_key, apikey.c_str(), sizeof(config.api_key));
   }
 
+  String savedGroqKey = preferences.getString("groqkey", "");
+  if (savedGroqKey.length() > 0) {
+    strlcpy(config.groq_apikey, savedGroqKey.c_str(), sizeof(config.groq_apikey));
+  } else {
+    strlcpy(config.groq_apikey, groq_apikey.c_str(), sizeof(config.groq_apikey));
+  }
+
   config.forecast_days = preferences.getInt("fcdays", 3);
 
   String savedCity = preferences.getString("city", "");
@@ -665,6 +675,7 @@ void saveConfig() {
   preferences.putString("ssid3", config.wifi_ssid3);
   preferences.putString("pass3", config.wifi_password3);
   preferences.putString("apikey", config.api_key);
+  preferences.putString("groqkey", config.groq_apikey);
   preferences.putInt("fcdays", config.forecast_days);
   preferences.putString("city", config.city);
   preferences.putString("lat", config.latitude);
@@ -717,6 +728,7 @@ String processTemplate(const char* page) {
   html.replace("%SSID3%", config.wifi_ssid3);
   html.replace("%PASS3%", config.wifi_password3);
   html.replace("%APIKEY%", config.api_key);
+  html.replace("%GROQKEY%", config.groq_apikey);
   html.replace("%FORECAST3_SEL%", config.forecast_days == 3 ? "selected" : "");
   html.replace("%FORECAST5_SEL%", config.forecast_days == 5 ? "selected" : "");
   html.replace("%CITY%", config.city);
@@ -863,6 +875,7 @@ void handleSave() {
   strlcpy(config.wifi_ssid3, webServer.arg("ssid3").c_str(), sizeof(config.wifi_ssid3));
   strlcpy(config.wifi_password3, webServer.arg("pass3").c_str(), sizeof(config.wifi_password3));
   strlcpy(config.api_key, webServer.arg("apikey").c_str(), sizeof(config.api_key));
+  strlcpy(config.groq_apikey, webServer.arg("groqkey").c_str(), sizeof(config.groq_apikey));
   config.forecast_days = webServer.arg("forecast_days").toInt();
   strlcpy(config.city, webServer.arg("city").c_str(), sizeof(config.city));
   strlcpy(config.latitude, webServer.arg("lat").c_str(), sizeof(config.latitude));
@@ -895,6 +908,7 @@ void handleReboot() {
   strlcpy(config.wifi_ssid3, webServer.arg("ssid3").c_str(), sizeof(config.wifi_ssid3));
   strlcpy(config.wifi_password3, webServer.arg("pass3").c_str(), sizeof(config.wifi_password3));
   strlcpy(config.api_key, webServer.arg("apikey").c_str(), sizeof(config.api_key));
+  strlcpy(config.groq_apikey, webServer.arg("groqkey").c_str(), sizeof(config.groq_apikey));
   config.forecast_days = webServer.arg("forecast_days").toInt();
   strlcpy(config.city, webServer.arg("city").c_str(), sizeof(config.city));
   strlcpy(config.latitude, webServer.arg("lat").c_str(), sizeof(config.latitude));
