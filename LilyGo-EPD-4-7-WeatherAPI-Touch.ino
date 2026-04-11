@@ -157,7 +157,7 @@ String WindDegToOrdinalDirection(float winddirection);
 String TitleCase(String text);
 String ConvertUnixTime(int unix_time);
 void DrawGraph(int x_pos, int y_pos, int gwidth, int gheight, float Y1Min, float Y1Max, String title, float DataArray[], int readings, boolean auto_scale, boolean barchart_mode, int title_x_offset = 0, int hours_span = 0);
-void DrawHistoryGraph(int x_pos, int y_pos, int gwidth, int gheight, float Y1Min, float Y1Max, String title, String unit, float DataArray[], int readings, boolean auto_scale, boolean barchart_mode, int hours_span, boolean weekly_view, int start_hour);
+void DrawHistoryGraph(int x_pos, int y_pos, int gwidth, int gheight, float Y1Min, float Y1Max, String title, String unit, float DataArray[], float PosArray[], int readings, boolean auto_scale, boolean barchart_mode, int hours_span, boolean weekly_view, int start_hour);
 void DrawSDCard(int x, int y);
 float SumOfPrecip(float DataArray[], int readings);
 void drawString(int x, int y, String text, alignment align);
@@ -2129,7 +2129,8 @@ void DrawGraph(int x_pos, int y_pos, int gwidth, int gheight, float Y1Min, float
 }
 
 // History graph - 48H shows full details, weekly shows only midnight lines
-void DrawHistoryGraph(int x_pos, int y_pos, int gwidth, int gheight, float Y1Min, float Y1Max, String title, String unit, float DataArray[], int readings, boolean auto_scale, boolean barchart_mode, int hours_span, boolean weekly_view, int start_hour) {
+// PosArray contains normalized positions (0.0 to 1.0) based on real timestamps
+void DrawHistoryGraph(int x_pos, int y_pos, int gwidth, int gheight, float Y1Min, float Y1Max, String title, String unit, float DataArray[], float PosArray[], int readings, boolean auto_scale, boolean barchart_mode, int hours_span, boolean weekly_view, int start_hour) {
 #define y_minor_axis_hist 5
   setFont(OpenSans9B);
   float maxYscale = -10000;
@@ -2163,7 +2164,7 @@ void DrawHistoryGraph(int x_pos, int y_pos, int gwidth, int gheight, float Y1Min
   }
 
   // Draw graph frame
-  last_x = x_pos + 1;
+  last_x = x_pos + PosArray[0] * gwidth - 1;
   last_y = y_pos + (Y1Max - constrain(DataArray[0], Y1Min, Y1Max)) / (Y1Max - Y1Min) * gheight;
   drawRect(x_pos, y_pos, gwidth + 3, gheight + 2, DarkGrey);
 
@@ -2267,9 +2268,10 @@ void DrawHistoryGraph(int x_pos, int y_pos, int gwidth, int gheight, float Y1Min
     }
   }
 
-  // Draw data lines ON TOP
+  // Draw data lines ON TOP - use real timestamp positions from PosArray
   for (int gx = 0; gx < readings; gx++) {
-    x2 = x_pos + gx * gwidth / (readings - 1) - 1;
+    // Use normalized position from PosArray (0.0 to 1.0) for X coordinate
+    x2 = x_pos + PosArray[gx] * gwidth - 1;
     y2 = y_pos + (Y1Max - constrain(DataArray[gx], Y1Min, Y1Max)) / (Y1Max - Y1Min) * gheight + 1;
     if (barchart_mode) {
       fillRect(x2, y2, 2, y_pos + gheight - y2 + 2, Black);
@@ -3340,10 +3342,11 @@ void DisplayHistoryScreen() {
   float hist_hum[HISTORY_GRAPH_READINGS];
   float hist_press[HISTORY_GRAPH_READINGS];
   float hist_rain[HISTORY_GRAPH_READINGS];
+  float hist_pos[HISTORY_GRAPH_READINGS];  // Normalized positions based on real timestamps
 
   // Get readings based on selected view (48h or 168h = 1 week)
   int requestedHours = historyShowWeek ? 168 : 48;
-  int readings = getReadingsForHours(requestedHours, hist_temp, hist_hum, hist_press, hist_rain, HISTORY_GRAPH_READINGS);
+  int readings = getReadingsForHours(requestedHours, hist_temp, hist_hum, hist_press, hist_rain, hist_pos, HISTORY_GRAPH_READINGS);
 
   // Get actual hours span from timestamps (not assuming 10-min intervals)
   int actualHours = (int)getHistoryHoursSpan(requestedHours);
@@ -3365,16 +3368,16 @@ void DisplayHistoryScreen() {
   int gy1 = 120, gy2 = 320;
 
   // Temperature - top left
-  DrawHistoryGraph(gx1, gy1, gwidth, gheight, 0, 40, TXT_GRAPH_TEMP, Units == "M" ? "°C" : "°F", hist_temp, readings, autoscale_on, barchart_off, actualHours, historyShowWeek, startHour);
+  DrawHistoryGraph(gx1, gy1, gwidth, gheight, 0, 40, TXT_GRAPH_TEMP, Units == "M" ? "°C" : "°F", hist_temp, hist_pos, readings, autoscale_on, barchart_off, actualHours, historyShowWeek, startHour);
 
   // Pressure - top right
-  DrawHistoryGraph(gx2, gy1, gwidth, gheight, 900, 1050, TXT_GRAPH_PRESSURE, Units == "M" ? "hPa" : "in", hist_press, readings, autoscale_on, barchart_off, actualHours, historyShowWeek, startHour);
+  DrawHistoryGraph(gx2, gy1, gwidth, gheight, 900, 1050, TXT_GRAPH_PRESSURE, Units == "M" ? "hPa" : "in", hist_press, hist_pos, readings, autoscale_on, barchart_off, actualHours, historyShowWeek, startHour);
 
   // Humidity - bottom left
-  DrawHistoryGraph(gx1, gy2, gwidth, gheight, 0, 100, TXT_GRAPH_HUMIDITY, "%", hist_hum, readings, autoscale_off, barchart_off, actualHours, historyShowWeek, startHour);
+  DrawHistoryGraph(gx1, gy2, gwidth, gheight, 0, 100, TXT_GRAPH_HUMIDITY, "%", hist_hum, hist_pos, readings, autoscale_off, barchart_off, actualHours, historyShowWeek, startHour);
 
   // Rainfall - bottom right
-  DrawHistoryGraph(gx2, gy2, gwidth, gheight, 0, 10, TXT_GRAPH_RAIN, Units == "M" ? "mm" : "in", hist_rain, readings, autoscale_on, barchart_on, actualHours, historyShowWeek, startHour);
+  DrawHistoryGraph(gx2, gy2, gwidth, gheight, 0, 10, TXT_GRAPH_RAIN, Units == "M" ? "mm" : "in", hist_rain, hist_pos, readings, autoscale_on, barchart_on, actualHours, historyShowWeek, startHour);
 
   // Footer - readings count and storage type
   setFont(OpenSans10B);
