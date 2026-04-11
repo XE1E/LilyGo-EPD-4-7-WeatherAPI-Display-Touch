@@ -186,39 +186,101 @@ bool getWeatherReading(int index, WeatherReading &reading) {
 }
 
 // Get readings for last N hours (for graphing)
-int getReadingsForHours(int hours, float* tempArray, float* humArray, float* pressArray, float* rainArray, int maxReadings) {
+// Samples data based on REAL TIMESTAMPS to ensure correct time alignment
+// Returns normalized positions (0.0 to 1.0) in posArray for X-axis placement
+int getReadingsForHours(int hours, float* tempArray, float* humArray, float* pressArray, float* rainArray, float* posArray, int maxReadings) {
   if (!historyInitialized || historyCount == 0) return 0;
 
   uint32_t now = time(nullptr);
   uint32_t cutoff = now - (hours * 3600);
 
-  int count = 0;
+  // First pass: find time bounds and count readings
+  int readingsInWindow = 0;
+  int oldestIdx = -1;
+  int newestIdx = -1;
+  uint32_t oldestTime = 0;
+  uint32_t newestTime = 0;
 
-  // Start from newest and go back
-  for (int i = historyCount - 1; i >= 0 && count < maxReadings; i--) {
+  for (int i = 0; i < historyCount; i++) {
     WeatherReading reading;
     if (getWeatherReading(i, reading)) {
       if (reading.timestamp >= cutoff) {
-        int idx = count;
-        tempArray[idx] = reading.temperature / 10.0;
-        humArray[idx] = reading.humidity;
-        pressArray[idx] = reading.pressure;
-        rainArray[idx] = reading.rainfall / 100.0;
-        count++;
-      } else {
-        break;  // Older than cutoff, stop
+        if (oldestIdx == -1) {
+          oldestIdx = i;
+          oldestTime = reading.timestamp;
+        }
+        newestIdx = i;
+        newestTime = reading.timestamp;
+        readingsInWindow++;
       }
     }
   }
 
-  // Reverse arrays so oldest is first
-  for (int i = 0; i < count / 2; i++) {
-    int j = count - 1 - i;
-    float tmp;
-    tmp = tempArray[i]; tempArray[i] = tempArray[j]; tempArray[j] = tmp;
-    tmp = humArray[i]; humArray[i] = humArray[j]; humArray[j] = tmp;
-    tmp = pressArray[i]; pressArray[i] = pressArray[j]; pressArray[j] = tmp;
-    tmp = rainArray[i]; rainArray[i] = rainArray[j]; rainArray[j] = tmp;
+  if (readingsInWindow == 0 || newestTime <= oldestTime) return 0;
+
+  uint32_t timeSpan = newestTime - oldestTime;
+
+  // If we have fewer readings than max, return all with their real positions
+  if (readingsInWindow <= maxReadings) {
+    int count = 0;
+    for (int i = oldestIdx; i <= newestIdx; i++) {
+      WeatherReading reading;
+      if (getWeatherReading(i, reading)) {
+        if (reading.timestamp >= cutoff) {
+          tempArray[count] = reading.temperature / 10.0;
+          humArray[count] = reading.humidity;
+          pressArray[count] = reading.pressure;
+          rainArray[count] = reading.rainfall / 100.0;
+          // Normalized position based on real timestamp
+          posArray[count] = (float)(reading.timestamp - oldestTime) / (float)timeSpan;
+          count++;
+        }
+      }
+    }
+    return count;
+  }
+
+  // Sample by TIME: divide time span into maxReadings slots, pick closest reading to each slot
+  int count = 0;
+  int lastUsedIdx = oldestIdx - 1;
+
+  for (int slot = 0; slot < maxReadings; slot++) {
+    // Target time for this slot
+    uint32_t targetTime = oldestTime + (uint32_t)((uint64_t)slot * timeSpan / (maxReadings - 1));
+
+    // Find closest reading to target time (only search forward from last used)
+    int bestIdx = -1;
+    uint32_t bestDiff = UINT32_MAX;
+
+    for (int i = lastUsedIdx + 1; i <= newestIdx; i++) {
+      WeatherReading reading;
+      if (getWeatherReading(i, reading)) {
+        uint32_t diff = (reading.timestamp > targetTime) ?
+                        (reading.timestamp - targetTime) :
+                        (targetTime - reading.timestamp);
+        if (diff < bestDiff) {
+          bestDiff = diff;
+          bestIdx = i;
+        } else if (reading.timestamp > targetTime) {
+          // Past target and getting worse, stop searching
+          break;
+        }
+      }
+    }
+
+    if (bestIdx >= 0) {
+      WeatherReading reading;
+      if (getWeatherReading(bestIdx, reading)) {
+        tempArray[count] = reading.temperature / 10.0;
+        humArray[count] = reading.humidity;
+        pressArray[count] = reading.pressure;
+        rainArray[count] = reading.rainfall / 100.0;
+        // Use REAL timestamp position, not slot position
+        posArray[count] = (float)(reading.timestamp - oldestTime) / (float)timeSpan;
+        count++;
+        lastUsedIdx = bestIdx;
+      }
+    }
   }
 
   return count;
