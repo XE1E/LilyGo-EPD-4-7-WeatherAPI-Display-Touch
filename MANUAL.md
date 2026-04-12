@@ -1729,6 +1729,23 @@ La IA genera el texto usando datos reales de WeatherAPI (no inventa numeros):
 Navegacion:
 - Tocar cualquier zona → Regresa a pantalla principal
 
+#### 12.5.6 Funciones de Radioaficionado
+
+Acceso: Pantalla Info → tocar boton **RADIO** (esquina inferior derecha)
+
+Pantallas de referencia completas para radioaficionados:
+
+| Pantalla | Descripcion |
+|----------|-------------|
+| Alfabeto Fonetico | Alfabeto fonetico NATO/ICAO |
+| Codigos Q | Codigos Q mas utilizados |
+| Clave Morse | Representacion visual con puntos y rayas |
+| Prefijos DXCC | 3 paginas por region (Americas, Europa, Asia/Africa/Oceania) |
+| Propagacion HF | Indices solares y condiciones de banda en tiempo real (HamQSL) |
+| Concursos Principales | Calendario anual de concursos con fechas y modos |
+
+Para detalles completos, ver **[RADIO_MANUAL.md](RADIO_MANUAL.md)**
+
 ---
 
 ## 13. Apendice

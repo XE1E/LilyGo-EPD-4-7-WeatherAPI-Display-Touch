@@ -946,6 +946,23 @@ AI generates text using real WeatherAPI data (doesn't invent numbers):
 Navigation:
 - Touch any zone -> Returns to main screen
 
+#### 12.5.6 Amateur Radio Functions
+
+Access: Info screen -> touch **RADIO** button (bottom right corner)
+
+Complete reference screens for amateur radio operators:
+
+| Screen | Description |
+|--------|-------------|
+| Phonetic Alphabet | NATO/ICAO phonetic alphabet |
+| Q Codes | Most used Q codes |
+| Morse Code | Visual representation with dots and dashes |
+| DXCC Prefixes | 3 pages by region (Americas, Europe, Asia/Africa/Oceania) |
+| HF Propagation | Real-time solar indices and band conditions (HamQSL) |
+| Major Contests | Annual contest calendar with dates and modes |
+
+For complete details, see **[RADIO_MANUAL_EN.md](RADIO_MANUAL_EN.md)**
+
 ---
 
 ## 13. Appendix

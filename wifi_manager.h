@@ -45,6 +45,7 @@ struct ConfigData {
   char city[33];
   char latitude[16];
   char longitude[16];
+  char location_id[16];  // WeatherAPI station ID (optional, overrides coordinates)
   char language[8];
   char hemisphere[8];
   char units[4];
@@ -335,6 +336,11 @@ const char CONFIG_PAGE[] PROGMEM = R"rawliteral(
             </div>
           </div>
           <div class="form-group">
+            <label>Location ID (opcional, usa estacion especifica)</label>
+            <input type="text" name="location_id" value="%LOCATION_ID%" placeholder="ej: 3246957" maxlength="15">
+            <small style="color:#666">Si se especifica, ignora lat/lon. Dejar vacio para usar coordenadas.</small>
+          </div>
+          <div class="form-group">
             <label>Hemisferio</label>
             <select name="hemisphere">
               <option value="north" %NORTH_SEL%>Norte</option>
@@ -611,6 +617,13 @@ void loadConfig() {
     strlcpy(config.longitude, Longitude.c_str(), sizeof(config.longitude));
   }
 
+  String savedLocId = preferences.getString("locid", "");
+  if (savedLocId.length() > 0) {
+    strlcpy(config.location_id, savedLocId.c_str(), sizeof(config.location_id));
+  } else {
+    strlcpy(config.location_id, LocationID.c_str(), sizeof(config.location_id));
+  }
+
   String savedLang = preferences.getString("lang", "");
   if (savedLang.length() > 0) {
     strlcpy(config.language, savedLang.c_str(), sizeof(config.language));
@@ -680,6 +693,7 @@ void saveConfig() {
   preferences.putString("city", config.city);
   preferences.putString("lat", config.latitude);
   preferences.putString("lon", config.longitude);
+  preferences.putString("locid", config.location_id);
   preferences.putString("lang", config.language);
   preferences.putString("hemi", config.hemisphere);
   preferences.putString("units", config.units);
@@ -734,6 +748,7 @@ String processTemplate(const char* page) {
   html.replace("%CITY%", config.city);
   html.replace("%LAT%", config.latitude);
   html.replace("%LON%", config.longitude);
+  html.replace("%LOCATION_ID%", config.location_id);
   html.replace("%LANG_ES_SEL%", strcmp(config.language, "ES") == 0 ? "selected" : "");
   html.replace("%LANG_EN_SEL%", strcmp(config.language, "EN") == 0 ? "selected" : "");
   html.replace("%LANG_FR_SEL%", strcmp(config.language, "FR") == 0 ? "selected" : "");
@@ -880,6 +895,7 @@ void handleSave() {
   strlcpy(config.city, webServer.arg("city").c_str(), sizeof(config.city));
   strlcpy(config.latitude, webServer.arg("lat").c_str(), sizeof(config.latitude));
   strlcpy(config.longitude, webServer.arg("lon").c_str(), sizeof(config.longitude));
+  strlcpy(config.location_id, webServer.arg("location_id").c_str(), sizeof(config.location_id));
   strlcpy(config.language, webServer.arg("lang").c_str(), sizeof(config.language));
   strlcpy(config.hemisphere, webServer.arg("hemisphere").c_str(), sizeof(config.hemisphere));
   strlcpy(config.units, webServer.arg("units").c_str(), sizeof(config.units));
@@ -913,6 +929,7 @@ void handleReboot() {
   strlcpy(config.city, webServer.arg("city").c_str(), sizeof(config.city));
   strlcpy(config.latitude, webServer.arg("lat").c_str(), sizeof(config.latitude));
   strlcpy(config.longitude, webServer.arg("lon").c_str(), sizeof(config.longitude));
+  strlcpy(config.location_id, webServer.arg("location_id").c_str(), sizeof(config.location_id));
   strlcpy(config.language, webServer.arg("lang").c_str(), sizeof(config.language));
   strlcpy(config.hemisphere, webServer.arg("hemisphere").c_str(), sizeof(config.hemisphere));
   strlcpy(config.units, webServer.arg("units").c_str(), sizeof(config.units));

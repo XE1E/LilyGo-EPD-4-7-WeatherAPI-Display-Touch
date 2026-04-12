@@ -946,6 +946,23 @@ L'IA genere le texte en utilisant les donnees reelles d'WeatherAPI (n'invente pa
 Navigation:
 - Toucher n'importe quelle zone -> Retour a l'ecran principal
 
+#### 12.5.6 Fonctions Radioamateur
+
+Acces: Ecran Info -> toucher le bouton **RADIO** (coin inferieur droit)
+
+Ecrans de reference complets pour radioamateurs:
+
+| Ecran | Description |
+|-------|-------------|
+| Alphabet Phonetique | Alphabet phonetique NATO/OACI |
+| Codes Q | Codes Q les plus utilises |
+| Code Morse | Representation visuelle avec points et traits |
+| Prefixes DXCC | 3 pages par region (Ameriques, Europe, Asie/Afrique/Oceanie) |
+| Propagation HF | Indices solaires et conditions de bande en temps reel (HamQSL) |
+| Concours Principaux | Calendrier annuel des concours avec dates et modes |
+
+Pour plus de details, voir **[RADIO_MANUAL_FR.md](RADIO_MANUAL_FR.md)**
+
 ---
 
 ## 13. Annexe

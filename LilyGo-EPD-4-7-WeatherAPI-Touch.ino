@@ -90,6 +90,15 @@ boolean SmallIcon   = false;
 int iconScaleOverride = 0;  // 0 = use default, >0 = use this scale
 String  Time_str = "--:--:--";
 String  Date_str = "-- --- ----";
+// Last successful weather update (survives deep sleep)
+RTC_DATA_ATTR char LastUpdateTime[12] = "--:--:--";
+RTC_DATA_ATTR char LastUpdateDate[20] = "-- --- ----";
+RTC_DATA_ATTR bool hasValidWeatherData = false;
+// Station info from last API response
+RTC_DATA_ATTR char StationName[50] = "";
+RTC_DATA_ATTR uint32_t StationDataEpoch = 0;  // localtime_epoch from API
+RTC_DATA_ATTR float StationLat = 0;
+RTC_DATA_ATTR float StationLon = 0;
 int     wifi_signal, CurrentHour = 0, CurrentMin = 0, CurrentSec = 0, vref = 1100;
 
 // Unit conversion constants
@@ -115,6 +124,10 @@ int  SleepHour       = 1; // Sleep after 01:00 to save battery power
 long StartTime       = 0;
 long SleepTimer      = 0;
 long Delta           = 30; // ESP32 rtc speed compensation, prevents display at xx:59:yy and then xx:00:yy (one minute later) to save power
+
+// Timezone offset between API and device (in hours)
+int apiTimezoneOffset = 0;
+String adjustTimeByOffset(String timeStr, int offsetHours);  // Forward declaration
 
 // AP Mode state
 bool inAPMode = false;
@@ -147,6 +160,7 @@ void DisplayGraphsScreen();
 void DisplayInfoScreen();
 void DisplayInfoFeatures1Screen();
 void DisplayInfoFeatures2Screen();
+void DisplayInfoUpdateScreen();
 void DisplayInfoHelpScreen();
 void DisplayInfoCreditsScreen();
 void DisplayHistoryScreen();
@@ -161,6 +175,8 @@ void DrawHistoryGraph(int x_pos, int y_pos, int gwidth, int gheight, float Y1Min
 void DrawSDCard(int x, int y);
 float SumOfPrecip(float DataArray[], int readings);
 void drawString(int x, int y, String text, alignment align);
+int getTextWidthPixels(String text);
+int drawWrappedText(int centerX, int startY, int maxWidth, int lineHeight, const char* text, int maxLines);
 void drawScreenHeader();
 void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
 void fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
@@ -389,6 +405,7 @@ void drawCurrentScreen() {
     case SCREEN_CALENDAR_YEAR:  DisplayCalendarYearScreen(); break;
     case SCREEN_INFO_FEATURES1: DisplayInfoFeatures1Screen(); break;
     case SCREEN_INFO_FEATURES2: DisplayInfoFeatures2Screen(); break;
+    case SCREEN_INFO_UPDATE:    DisplayInfoUpdateScreen(); break;
     case SCREEN_INFO_HELP:      DisplayInfoHelpScreen(); break;
     case SCREEN_INFO_CREDITS:   DisplayInfoCreditsScreen(); break;
     case SCREEN_CALLSIGN:       DisplayCallsignScreen(); break;
@@ -855,6 +872,12 @@ void setup() {
       }
       Serial.println("Received all weather data...");
       if (RxWeather) { // Only if received weather data proceed
+        // Save last successful update time
+        strncpy(LastUpdateTime, Time_str.c_str(), sizeof(LastUpdateTime) - 1);
+        strncpy(LastUpdateDate, Date_str.c_str(), sizeof(LastUpdateDate) - 1);
+        hasValidWeatherData = true;
+        Serial.printf("Weather updated at: %s %s\n", LastUpdateDate, LastUpdateTime);
+
         // Save current weather to history
         addWeatherReading(
           WxConditions[0].Temperature,
@@ -900,6 +923,7 @@ void setup() {
 void Convert_Readings_to_Imperial() {
   // Pressure stays in mb/hPa for both unit systems (no conversion needed)
   WxForecast[0].Rainfall = mm_to_inches(WxForecast[0].Rainfall);
+  WxConditions[0].DailyRainfall = mm_to_inches(WxConditions[0].DailyRainfall);
 }
 
 // Decode WeatherAPI JSON response (all data in one response)
@@ -922,7 +946,36 @@ bool DecodeWeatherAPI(const String& json) {
   WxConditions[0].Country = location["country"].as<String>();
   WxConditions[0].lat = location["lat"].as<float>();
   WxConditions[0].lon = location["lon"].as<float>();
+  // Store station info for update info screen
+  String stationFullName = location["name"].as<String>() + ", " + WxConditions[0].Region;
+  strncpy(StationName, stationFullName.c_str(), sizeof(StationName) - 1);
+  StationLat = WxConditions[0].lat;
+  StationLon = WxConditions[0].lon;
+  StationDataEpoch = location["localtime_epoch"].as<uint32_t>();
   Serial.println("Location: " + location["name"].as<String>() + ", " + WxConditions[0].Region);
+  Serial.println("API Timezone: " + location["tz_id"].as<String>());
+  String apiLocaltime = location["localtime"].as<String>();
+  Serial.println("API Localtime: " + apiLocaltime);
+  Serial.printf("Device Time: %02d:%02d:%02d (TZ: %s, GMT: %d, DST: %d)\n",
+    CurrentHour, CurrentMin, CurrentSec, Timezone, gmtOffset_sec, daylightOffset_sec);
+
+  // Calculate timezone offset between API and device
+  // API localtime format: "2026-04-11 17:36"
+  int spacePos = apiLocaltime.indexOf(' ');
+  if (spacePos > 0) {
+    String apiTimeStr = apiLocaltime.substring(spacePos + 1);
+    int colonPos = apiTimeStr.indexOf(':');
+    if (colonPos > 0) {
+      int apiHour = apiTimeStr.substring(0, colonPos).toInt();
+      apiTimezoneOffset = apiHour - CurrentHour;  // Negative if API is behind device time
+      // Handle day boundary (e.g., device 00:30, API 23:30 = +1 hour offset)
+      if (apiTimezoneOffset > 12) apiTimezoneOffset -= 24;
+      if (apiTimezoneOffset < -12) apiTimezoneOffset += 24;
+      if (apiTimezoneOffset != 0) {
+        Serial.printf("Timezone offset detected: %d hour(s) - will adjust sunrise/sunset\n", apiTimezoneOffset);
+      }
+    }
+  }
 
   // Current conditions
   JsonObject current = root["current"];
@@ -943,6 +996,7 @@ bool DecodeWeatherAPI(const String& json) {
   // Condition text and icon code
   WxConditions[0].Forecast0 = current["condition"]["text"].as<String>();
   int conditionCode = current["condition"]["code"].as<int>();
+  WxConditions[0].ConditionCode = conditionCode;  // Store for short description
   WxConditions[0].Icon = mapWeatherAPIIcon(conditionCode, current["is_day"].as<int>());
 
   Serial.printf("Temp: %.1f, Feels: %.1f, Hum: %.0f%%\n",
@@ -978,18 +1032,28 @@ bool DecodeWeatherAPI(const String& json) {
 
     // Store astronomy data for day 0 (today)
     if (day == 0) {
-      WxConditions[0].SunriseStr = astro["sunrise"].as<String>();
-      WxConditions[0].SunsetStr = astro["sunset"].as<String>();
-      WxConditions[0].Moonrise = astro["moonrise"].as<String>();
-      WxConditions[0].Moonset = astro["moonset"].as<String>();
+      // Get raw values from API
+      String rawSunrise = astro["sunrise"].as<String>();
+      String rawSunset = astro["sunset"].as<String>();
+      String rawMoonrise = astro["moonrise"].as<String>();
+      String rawMoonset = astro["moonset"].as<String>();
+
+      // Apply timezone offset correction if needed (e.g., API uses DST but location doesn't)
+      WxConditions[0].SunriseStr = adjustTimeByOffset(rawSunrise, apiTimezoneOffset);
+      WxConditions[0].SunsetStr = adjustTimeByOffset(rawSunset, apiTimezoneOffset);
+      WxConditions[0].Moonrise = adjustTimeByOffset(rawMoonrise, apiTimezoneOffset);
+      WxConditions[0].Moonset = adjustTimeByOffset(rawMoonset, apiTimezoneOffset);
       WxConditions[0].MoonPhase = astro["moon_phase"].as<String>();
       WxConditions[0].MoonIllum = astro["moon_illumination"].as<int>();
 
-      // Also store daily high/low for today
+      // Also store daily high/low and total precipitation for today
       WxConditions[0].High = dayInfo["maxtemp_c"].as<float>();
       WxConditions[0].Low = dayInfo["mintemp_c"].as<float>();
+      WxConditions[0].DailyRainfall = dayInfo["totalprecip_mm"].as<float>();
+      Serial.printf("Daily rainfall: %.1f mm\n", WxConditions[0].DailyRainfall);
 
-      Serial.printf("Sun: %s - %s\n", WxConditions[0].SunriseStr.c_str(), WxConditions[0].SunsetStr.c_str());
+      Serial.printf("Sun (raw): %s - %s\n", rawSunrise.c_str(), rawSunset.c_str());
+      Serial.printf("Sun (adjusted): %s - %s\n", WxConditions[0].SunriseStr.c_str(), WxConditions[0].SunsetStr.c_str());
       Serial.printf("Moon: %s (%d%%), Rise: %s, Set: %s\n",
         WxConditions[0].MoonPhase.c_str(), WxConditions[0].MoonIllum,
         WxConditions[0].Moonrise.c_str(), WxConditions[0].Moonset.c_str());
@@ -1085,9 +1149,19 @@ bool obtainWeatherData(WiFiClientSecure & client) {
   client.stop();
   HTTPClient http;
 
+  // Determine location query: use Location ID if configured, otherwise coordinates
+  String locationQuery;
+  if (strlen(config.location_id) > 0) {
+    locationQuery = "id:" + String(config.location_id);
+    Serial.println("Using Location ID: " + locationQuery);
+  } else {
+    locationQuery = Latitude + "," + Longitude;
+    Serial.println("Using coordinates: " + locationQuery);
+  }
+
   // WeatherAPI endpoint - all data in one call
   String uri = "/v1/forecast.json?key=" + apikey +
-               "&q=" + Latitude + "," + Longitude +
+               "&q=" + locationQuery +
                "&days=3&aqi=yes&alerts=no&lang=" + Language;
 
   Serial.println("Fetching: https://" + String(server) + uri);
@@ -1114,6 +1188,31 @@ bool obtainWeatherData(WiFiClientSecure & client) {
     Serial.printf("Connection failed, error: %s (code: %d)\n", http.errorToString(httpCode).c_str(), httpCode);
     client.stop();
     http.end();
+
+    // If Location ID was used and failed, try fallback to coordinates
+    if (strlen(config.location_id) > 0) {
+      Serial.println("Location ID failed, trying coordinates fallback...");
+      String fallbackUri = "/v1/forecast.json?key=" + apikey +
+                   "&q=" + Latitude + "," + Longitude +
+                   "&days=3&aqi=yes&alerts=no&lang=" + Language;
+      Serial.println("Fetching: https://" + String(server) + fallbackUri);
+
+      client.setInsecure();
+      http.begin(client, server, 443, fallbackUri, true);
+      httpCode = http.GET();
+
+      if (httpCode == HTTP_CODE_OK) {
+        String payload = http.getString();
+        Serial.printf("Fallback response size: %d bytes\n", payload.length());
+        if (DecodeWeatherAPI(payload)) {
+          client.stop();
+          http.end();
+          return true;
+        }
+      }
+      client.stop();
+      http.end();
+    }
     return false;
   }
 }
@@ -1174,9 +1273,9 @@ void DisplayGeneralInfoSection() {
   drawString(20, 13, City, LEFT);
   drawString(20, 13, City, LEFT);
   drawString(20, 13, City, LEFT);
-  // Date/time moved 40px right on main screen for more city space
+  // Date/time of last successful update (moved 40px right for more city space)
   setFont(OpenSans10B);
-  drawString(340, 15, Date_str + "  @ " + Time_str, LEFT);
+  drawString(340, 15, String(LastUpdateDate) + "  @ " + String(LastUpdateTime), LEFT);
 }
 
 void DisplayWeatherIcon(int x, int y) {
@@ -1266,24 +1365,10 @@ void DisplayTemperatureSection(int x, int y) {
 
 void DisplayForecastTextSection(int x, int y) {
   setFont(OpenSans14B);
-  //Wx_Description = WxConditions[0].Main0;          // e.g. typically 'Clouds'
-  String Wx_Description = WxConditions[0].Forecast0; // e.g. typically 'overcast clouds' ... you choose which
-  Wx_Description.replace(".", ""); // remove any '.'
-  if (WxForecast[0].Rainfall > 0) Wx_Description += " (" + String(WxForecast[0].Rainfall, 1) + String((Units == "M" ? "mm" : "in")) + ")";
-  int spaceRemaining = 0, p = 0, charCount = 0, Width = 30;
-  while (p < Wx_Description.length()) {
-    if (Wx_Description.substring(p, p + 1) == " ") spaceRemaining = p;
-    if (charCount > Width - 1) { // '~' is the end of line marker
-      Wx_Description = Wx_Description.substring(0, spaceRemaining) + "~" + Wx_Description.substring(spaceRemaining + 1);
-      charCount = 0;
-    }
-    p++;
-    charCount++;
-  }
-  String Line1 = Wx_Description.substring(0, Wx_Description.indexOf("~"));
-  String Line2 = Wx_Description.substring(Wx_Description.indexOf("~") + 1);
-  drawString(x + 28, y + 5, TitleCase(Line1), LEFT);  // Line1 moved 5px up
-  if (Line1 != Line2) drawString(x + 28, y + 35, Line2, LEFT);
+  // Use short description from condition code (no rainfall info added)
+  String Wx_Description = getConditionShortText(WxConditions[0].ConditionCode);
+
+  drawString(x + 28, y + 25, Wx_Description, LEFT);
 }
 
 void DisplayPressureSection(int x, int y, float pressure, String slope) {
@@ -1417,6 +1502,41 @@ void DrawMoonFromAPI(int x, int y, int diameter, int illumination, String phase,
     drawLine(pW3x, pW3y, pW4x, pW4y, White);
   }
   drawCircle(x + diameter - 1, y + diameter, diameter / 2, Black);
+}
+
+// Adjust time string by offset hours (e.g., "07:22 AM" with offset -1 becomes "06:22 AM")
+String adjustTimeByOffset(String timeStr, int offsetHours) {
+  if (offsetHours == 0) return timeStr;
+
+  timeStr.trim();
+  timeStr.toUpperCase();
+
+  int colonPos = timeStr.indexOf(':');
+  if (colonPos < 0) return timeStr;
+
+  int hour = timeStr.substring(0, colonPos).toInt();
+  String minutePart = timeStr.substring(colonPos + 1, colonPos + 3);
+
+  bool isPM = timeStr.indexOf("PM") >= 0;
+  bool isAM = timeStr.indexOf("AM") >= 0;
+
+  // Convert to 24-hour for calculation
+  if (isPM && hour != 12) hour += 12;
+  if (isAM && hour == 12) hour = 0;
+
+  // Apply offset
+  hour += offsetHours;
+  if (hour < 0) hour += 24;
+  if (hour >= 24) hour -= 24;
+
+  // Convert back to 12-hour format
+  bool newPM = (hour >= 12);
+  int hour12 = hour % 12;
+  if (hour12 == 0) hour12 = 12;
+
+  char buf[12];
+  sprintf(buf, "%02d:%s %s", hour12, minutePart.c_str(), newPM ? "PM" : "AM");
+  return String(buf);
 }
 
 // Convert "06:40 AM" or "06:48 PM" to 24-hour format "06:40" or "18:48"
@@ -1611,7 +1731,7 @@ void DrawSegment(int x, int y, int o1, int o2, int o3, int o4, int o11, int o12,
 }
 
 void DrawPressureAndTrend(int x, int y, float pressure, String slope) {
-  drawString(x + 25, y - 10, String(pressure, (Units == "M" ? 0 : 1)) + (Units == "M" ? "hPa" : "in"), LEFT);
+  drawString(x + 25, y - 10, String(pressure, (Units == "M" ? 0 : 1)) + (Units == "M" ? (currentLang == 0 ? "mb" : "hPa") : "in"), LEFT);
   // Arrow with shaft and head for pressure trend
   int ax = x + 8;  // Arrow center x
   int ay = y;      // Arrow center y (lowered)
@@ -2332,10 +2452,65 @@ void drawString(int x, int y, String text, alignment align) {
   write_string(&currentFont, data, &x, &cursor_y, framebuffer);
 }
 
+// Get text width in pixels using current font
+int getTextWidthPixels(String text) {
+  char* data = const_cast<char*>(text.c_str());
+  int x = 0, y = 0, x1, y1, w, h;
+  get_text_bounds(&currentFont, data, &x, &y, &x1, &y1, &w, &h, NULL);
+  return w;
+}
+
+// Word wrap text and draw centered lines - returns number of lines drawn
+// Font must be set before calling this function
+int drawWrappedText(int centerX, int startY, int maxWidth, int lineHeight, const char* text, int maxLines) {
+  String remaining = text;
+  int lines = 0;
+  int currentY = startY;
+
+  while (remaining.length() > 0 && lines < maxLines) {
+    // Check if remaining text fits in one line
+    if (getTextWidthPixels(remaining) <= maxWidth) {
+      drawString(centerX, currentY, remaining, CENTER);
+      return lines + 1;
+    }
+
+    // Binary search for optimal break point
+    int low = 1, high = remaining.length(), breakPoint = 1;
+    while (low <= high) {
+      int mid = (low + high) / 2;
+      if (getTextWidthPixels(remaining.substring(0, mid)) <= maxWidth) {
+        breakPoint = mid;
+        low = mid + 1;
+      } else {
+        high = mid - 1;
+      }
+    }
+
+    // Find last space before breakPoint for clean word break
+    int spacePos = breakPoint;
+    while (spacePos > 0 && remaining.charAt(spacePos - 1) != ' ') {
+      spacePos--;
+    }
+    if (spacePos > 0) breakPoint = spacePos;
+
+    // Draw line and advance
+    String line = remaining.substring(0, breakPoint);
+    line.trim();
+    drawString(centerX, currentY, line, CENTER);
+
+    remaining = remaining.substring(breakPoint);
+    remaining.trim();
+    currentY += lineHeight;
+    lines++;
+  }
+
+  return lines;
+}
+
 // Common screen header with date and time
 void drawScreenHeader() {
   setFont(OpenSans10B);
-  drawString(300, 15, Date_str + "  @ " + Time_str, LEFT);
+  drawString(300, 15, String(LastUpdateDate) + "  @ " + String(LastUpdateTime), LEFT);
 }
 
 void fillCircle(int x, int y, int r, uint8_t color) {
@@ -2486,9 +2661,61 @@ void DisplayCurrentDetailScreen() {
   DisplayConditionsSection(220, 300, WxConditions[0].Icon, LargeIcon);
   iconScaleOverride = 0;
 
-  // Weather description below icon
+  // Weather description below icon (max 25 chars per line, 3 lines)
   setFont(OpenSans10B);
-  drawString(220, 385, TitleCase(WxConditions[0].Forecast0), CENTER);
+  String wxDesc = WxConditions[0].Forecast0;
+
+  // Test with longest possible description (uncomment to test):
+  //wxDesc = "Tormentas electricas moderadas con lluvia intensa y granizo";
+
+  const int maxCharsDetail = 25;
+  String descLine1 = "", descLine2 = "", descLine3 = "";
+  String remaining = wxDesc;
+
+  // Line 1
+  if (remaining.length() <= maxCharsDetail) {
+    descLine1 = remaining;
+    remaining = "";
+  } else {
+    int breakPos = maxCharsDetail;
+    for (int i = maxCharsDetail - 1; i >= 0; i--) {
+      if (remaining.charAt(i) == ' ') { breakPos = i; break; }
+    }
+    descLine1 = remaining.substring(0, breakPos);
+    remaining = remaining.substring(breakPos + 1);
+  }
+
+  // Line 2
+  if (remaining.length() > 0) {
+    if (remaining.length() <= maxCharsDetail) {
+      descLine2 = remaining;
+      remaining = "";
+    } else {
+      int breakPos = maxCharsDetail;
+      for (int i = maxCharsDetail - 1; i >= 0; i--) {
+        if (remaining.charAt(i) == ' ') { breakPos = i; break; }
+      }
+      descLine2 = remaining.substring(0, breakPos);
+      remaining = remaining.substring(breakPos + 1);
+    }
+  }
+
+  // Line 3
+  if (remaining.length() > 0) {
+    if (remaining.length() <= maxCharsDetail) {
+      descLine3 = remaining;
+    } else {
+      int breakPos = maxCharsDetail;
+      for (int i = maxCharsDetail - 1; i >= 0; i--) {
+        if (remaining.charAt(i) == ' ') { breakPos = i; break; }
+      }
+      descLine3 = remaining.substring(0, breakPos);
+    }
+  }
+
+  drawString(220, 385, TitleCase(descLine1), CENTER);
+  if (descLine2.length() > 0) drawString(220, 405, TitleCase(descLine2), CENTER);
+  if (descLine3.length() > 0) drawString(220, 425, TitleCase(descLine3), CENTER);
 
   // Right: Wind, Gusts, Visibility, Cloudiness, Feels Like, Dew Point (6 rows)
   int rightColLabel = 645, rightColValue = 685;
@@ -2531,8 +2758,9 @@ void DisplayCurrentDetailScreen() {
   setFont(OpenSans12B);
   drawString(sunriseX, valY, convertTo24Hour(WxConditions[0].SunriseStr), CENTER);
   drawString(sunsetX, valY, convertTo24Hour(WxConditions[0].SunsetStr), CENTER);
-  setFont(OpenSans16B);
-  drawString(rainX, valY, String(WxForecast[0].Pop * 100, 0) + "%", CENTER);
+  // Show daily rainfall total from WeatherAPI (already converted to inches if Imperial)
+  String rainUnit = (Units == "M") ? "mm" : "in";
+  drawString(rainX, valY, String(WxConditions[0].DailyRainfall, 1) + rainUnit, CENTER);
 
   // UV with level (uppercase, smaller font, raised 5px)
   setFont(OpenSans12B);
@@ -2563,7 +2791,7 @@ void DisplayCurrentDetailScreen() {
   setFont(OpenSans12B);
   drawString(sunriseX, valY + labelOffsetY, TXT_SUNRISE, CENTER);
   drawString(sunsetX, valY + labelOffsetY, TXT_SUNSET, CENTER);
-  drawString(rainX, valY + labelOffsetY, TXT_RAIN_PROB, CENTER);
+  drawString(rainX, valY + labelOffsetY, TXT_RAIN_TODAY, CENTER);
   drawString(uvX, valY + labelOffsetY, TXT_UV_INDEX, CENTER);
   drawString(aqiX, valY + labelOffsetY, TXT_AQI, CENTER);
 
@@ -2828,7 +3056,7 @@ void DisplayInfoScreen() {
 
   // Page indicator
   setFont(OpenSans10B);
-  drawString(SCREEN_WIDTH / 2, 515, "0 / 4", CENTER);
+  drawString(SCREEN_WIDTH / 2, 515, "0 / 5", CENTER);
 
   drawInfoNavArrow(50);
 
@@ -2989,7 +3217,7 @@ void DisplayInfoFeatures1Screen() {
 
   // Page indicator
   setFont(OpenSans10B);
-  drawString(SCREEN_WIDTH / 2, 515, "1 / 4", CENTER);
+  drawString(SCREEN_WIDTH / 2, 515, "1 / 5", CENTER);
 
   drawInfoNavArrow(50);
 
@@ -3001,39 +3229,39 @@ void DisplayInfoFeatures1Screen() {
   setFont(OpenSans10B);
 
   // Left column
-  drawString(col1, y, "Microcontrolador: ESP32-S3", LEFT);
+  drawString(col1, y, TXT_HW_MICRO, LEFT);
   y += lineH;
-  drawString(col1, y, "CPU: Dual-core Xtensa LX7 @ 240MHz", LEFT);
+  drawString(col1, y, TXT_HW_CPU, LEFT);
   y += lineH;
-  drawString(col1, y, "Memoria Flash: 16 MB", LEFT);
+  drawString(col1, y, TXT_HW_FLASH, LEFT);
   y += lineH;
-  drawString(col1, y, "PSRAM: 8 MB OPI", LEFT);
+  drawString(col1, y, TXT_HW_PSRAM, LEFT);
   y += lineH * 2;
-  drawString(col1, y, "WiFi: 802.11 b/g/n 2.4GHz", LEFT);
+  drawString(col1, y, TXT_HW_WIFI, LEFT);
   y += lineH;
-  drawString(col1, y, "Bluetooth: BLE 5.0 (disponible)", LEFT);
+  drawString(col1, y, TXT_HW_BLE, LEFT);
   y += lineH * 2;
-  drawString(col1, y, "Consumo Activo: ~150mA", LEFT);
+  drawString(col1, y, TXT_HW_ACTIVE, LEFT);
   y += lineH;
-  drawString(col1, y, "Consumo Deep Sleep: ~10uA", LEFT);
+  drawString(col1, y, TXT_HW_SLEEP, LEFT);
 
   // Right column
   y = 120;
-  drawString(col2, y, "Pantalla: E-Paper 4.7\"", LEFT);
+  drawString(col2, y, TXT_HW_DISPLAY, LEFT);
   y += lineH;
-  drawString(col2, y, "Resolucion: 960 x 540 px", LEFT);
+  drawString(col2, y, TXT_HW_RES, LEFT);
   y += lineH;
-  drawString(col2, y, "Colores: 16 niveles gris", LEFT);
+  drawString(col2, y, TXT_HW_COLORS, LEFT);
   y += lineH;
-  drawString(col2, y, "Tiempo refresco: ~0.5 seg", LEFT);
+  drawString(col2, y, TXT_HW_REFRESH, LEFT);
   y += lineH;
-  drawString(col2, y, "Angulo vision: ~180 grados", LEFT);
+  drawString(col2, y, TXT_HW_ANGLE, LEFT);
   y += lineH;
-  drawString(col2, y, "Touch: GT911 Capacitivo I2C", LEFT);
+  drawString(col2, y, TXT_HW_TOUCH, LEFT);
   y += lineH * 2;
-  drawString(col2, y, "Bateria: LiPo 3.7V (3.2-4.2V)", LEFT);
+  drawString(col2, y, TXT_HW_BATT, LEFT);
   y += lineH;
-  drawString(col2, y, "MicroSD: SPI FAT32/exFAT", LEFT);
+  drawString(col2, y, TXT_HW_SD, LEFT);
 
   // Footer
   setFont(OpenSans8B);
@@ -3051,7 +3279,7 @@ void DisplayInfoFeatures2Screen() {
 
   // Page indicator
   setFont(OpenSans10B);
-  drawString(SCREEN_WIDTH / 2, 515, "2 / 4", CENTER);
+  drawString(SCREEN_WIDTH / 2, 515, "2 / 5", CENTER);
 
   drawInfoNavArrow(50);
 
@@ -3063,39 +3291,137 @@ void DisplayInfoFeatures2Screen() {
   setFont(OpenSans10B);
 
   // Left column - Software
-  drawString(col1, y, "Pantallas: 13 navegables", LEFT);
+  drawString(col1, y, TXT_SW_SCREENS, LEFT);
   y += lineH;
-  drawString(col1, y, "Multi-WiFi: Hasta 3 redes", LEFT);
+  drawString(col1, y, TXT_SW_MULTIWIFI, LEFT);
   y += lineH;
-  drawString(col1, y, "Historial SD: ~1 año de datos", LEFT);
+  drawString(col1, y, TXT_SW_HISTSD, LEFT);
   y += lineH;
-  drawString(col1, y, "Historial Int: ~7 dias (FFat)", LEFT);
+  drawString(col1, y, TXT_SW_HISTINT, LEFT);
   y += lineH;
-  drawString(col1, y, "Actualizacion: 5-120 min config.", LEFT);
+  drawString(col1, y, TXT_SW_UPDATE, LEFT);
   y += lineH;
-  drawString(col1, y, "Idiomas: ES / EN / FR", LEFT);
+  drawString(col1, y, TXT_SW_LANGS, LEFT);
   y += lineH * 2;
-  drawString(col1, y, "Modo AP: WeatherStation-Setup", LEFT);
+  drawString(col1, y, TXT_SW_APMODE, LEFT);
   y += lineH;
-  drawString(col1, y, "Portal: http://192.168.4.1", LEFT);
+  drawString(col1, y, TXT_SW_PORTAL, LEFT);
   y += lineH;
-  drawString(col1, y, "Password: weather123", LEFT);
+  drawString(col1, y, TXT_SW_PASS, LEFT);
 
   // Right column - API
   y = 120;
-  drawString(col2, y, "API: WeatherAPI.com", LEFT);
+  drawString(col2, y, TXT_SW_API, LEFT);
   y += lineH * 2;
-  drawString(col2, y, "Endpoint: /v1/forecast.json", LEFT);
+  drawString(col2, y, TXT_SW_ENDPOINT, LEFT);
   y += lineH;
-  drawString(col2, y, "Pronostico: 3 dias", LEFT);
+  drawString(col2, y, TXT_SW_FORECAST, LEFT);
   y += lineH;
-  drawString(col2, y, "UV/AQI: Incluido", LEFT);
+  drawString(col2, y, TXT_SW_UVAQI, LEFT);
   y += lineH;
-  drawString(col2, y, "Una llamada por actualizacion", LEFT);
+  drawString(col2, y, TXT_SW_ONECALL, LEFT);
   y += lineH * 2;
-  drawString(col2, y, "Limite gratis: 1M llamadas/mes", LEFT);
+  drawString(col2, y, TXT_SW_LIMIT, LEFT);
   y += lineH * 2;
-  drawString(col2, y, "Almacenamiento: NVS Preferences", LEFT);
+  drawString(col2, y, TXT_SW_STORAGE, LEFT);
+
+  // Footer
+  setFont(OpenSans8B);
+  drawFastHLine(100, 500, SCREEN_WIDTH - 200, Grey);
+}
+
+// Screen: Update Information
+void DisplayInfoUpdateScreen() {
+
+  // Title
+  setFont(OpenSans18B);
+  drawString(SCREEN_WIDTH / 2, 35, TXT_INFO_UPDATE, CENTER);
+  drawFastHLine(100, 87, SCREEN_WIDTH - 200, Black);
+  drawFastHLine(100, 90, SCREEN_WIDTH - 200, Grey);
+
+  // Page indicator
+  setFont(OpenSans10B);
+  drawString(SCREEN_WIDTH / 2, 515, "3 / 5", CENTER);
+
+  drawInfoNavArrow(50);
+
+  int y = 120;
+  int lineH = 28;
+  int col1 = 50;
+  int col2 = 330;  // Moved right for longer labels
+
+  // Station Information Section
+  setFont(OpenSans12B);
+  drawString(col1, y, TXT_UPD_STATION, LEFT);
+  drawFastHLine(col1, y + 18, 280, Grey);
+  y += 32;
+
+  setFont(OpenSans10B);
+
+  // Last update time
+  drawString(col1, y, TXT_UPD_LAST_UPDATE, LEFT);
+  drawString(col2, y, String(LastUpdateDate) + "  @ " + String(LastUpdateTime), LEFT);
+  y += lineH;
+
+  // Station ID
+  drawString(col1, y, TXT_UPD_STATION_ID, LEFT);
+  if (strlen(config.location_id) > 0) {
+    drawString(col2, y, String(config.location_id), LEFT);
+  } else {
+    drawString(col2, y, "--", LEFT);
+  }
+  y += lineH;
+
+  // Station name
+  drawString(col1, y, TXT_UPD_STATION_NAME, LEFT);
+  drawString(col2, y, String(StationName), LEFT);
+  y += lineH;
+
+  // Coordinates
+  drawString(col1, y, TXT_UPD_COORDINATES, LEFT);
+  char coordStr[30];
+  sprintf(coordStr, "%.4f, %.4f", StationLat, StationLon);
+  drawString(col2, y, String(coordStr), LEFT);
+  y += lineH;
+
+  // Station data time (from epoch)
+  drawString(col1, y, TXT_UPD_DATA_TIME, LEFT);
+  if (StationDataEpoch > 0) {
+    time_t stationTime = StationDataEpoch;
+    struct tm* tm_info = localtime(&stationTime);
+    char timeStr[30];
+    strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M", tm_info);
+    drawString(col2, y, String(timeStr), LEFT);
+  } else {
+    drawString(col2, y, "--", LEFT);
+  }
+  y += lineH * 2;
+
+  // Network Information Section
+  setFont(OpenSans12B);
+  drawString(col1, y, TXT_UPD_NETWORK, LEFT);
+  drawFastHLine(col1, y + 18, 250, Grey);
+  y += 32;
+
+  setFont(OpenSans10B);
+
+  // WiFi name
+  drawString(col1, y, TXT_UPD_WIFI_NAME, LEFT);
+  drawString(col2, y, WiFi.isConnected() ? WiFi.SSID() : "--", LEFT);
+  y += lineH;
+
+  // Signal level
+  drawString(col1, y, TXT_UPD_SIGNAL, LEFT);
+  if (WiFi.isConnected()) {
+    drawString(col2, y, String(WiFi.RSSI()) + " dBm", LEFT);
+  } else {
+    drawString(col2, y, "--", LEFT);
+  }
+  y += lineH;
+
+  // IP Address
+  drawString(col1, y, TXT_UPD_IP, LEFT);
+  drawString(col2, y, WiFi.isConnected() ? WiFi.localIP().toString() : "--", LEFT);
 
   // Footer
   setFont(OpenSans8B);
@@ -3113,7 +3439,7 @@ void DisplayInfoHelpScreen() {
 
   // Page indicator
   setFont(OpenSans10B);
-  drawString(SCREEN_WIDTH / 2, 515, "3 / 4", CENTER);
+  drawString(SCREEN_WIDTH / 2, 515, "4 / 5", CENTER);
 
   drawInfoNavArrow(50);
 
@@ -3209,7 +3535,7 @@ void DisplayInfoCreditsScreen() {
 
   // Page indicator
   setFont(OpenSans10B);
-  drawString(SCREEN_WIDTH / 2, 515, "4 / 4", CENTER);
+  drawString(SCREEN_WIDTH / 2, 515, "5 / 5", CENTER);
 
   drawInfoNavArrow(50);
 
@@ -3220,7 +3546,7 @@ void DisplayInfoCreditsScreen() {
 
   // Left column - Original author (required by license)
   setFont(OpenSans12B);
-  drawString(col1, y, "Autor Original", LEFT);
+  drawString(col1, y, TXT_CR_AUTHOR, LEFT);
   drawFastHLine(col1, y + 18, 180, Grey);
   y += 28;
 
@@ -3236,41 +3562,41 @@ void DisplayInfoCreditsScreen() {
 
   // Adaptations chain
   setFont(OpenSans12B);
-  drawString(col1, y, "Adaptaciones", LEFT);
+  drawString(col1, y, TXT_CR_ADAPTATIONS, LEFT);
   drawFastHLine(col1, y + 18, 170, Grey);
   y += 28;
 
   setFont(OpenSans10B);
-  drawString(col1, y, "markbirss - Adaptacion LilyGo EPD", LEFT);
+  drawString(col1, y, TXT_CR_ADAPT1, LEFT);
   y += lineH;
-  drawString(col1, y, "Xinyuan-LilyGO - Fork oficial", LEFT);
+  drawString(col1, y, TXT_CR_ADAPT2, LEFT);
   y += lineH;
-  drawString(col1, y, "Stefan Maetschke 2025 - makerguides.com", LEFT);
+  drawString(col1, y, TXT_CR_ADAPT3, LEFT);
   y += lineH + 10;
 
   setFont(OpenSans12B);
-  drawString(col1, y, "Modificaciones XE1E 2026", LEFT);
+  drawString(col1, y, TXT_CR_MODS, LEFT);
   drawFastHLine(col1, y + 18, 310, Grey);
   y += 28;
 
   setFont(OpenSans10B);
-  drawString(col1, y, "* Navegacion tactil 13 pantallas", LEFT);
+  drawString(col1, y, TXT_CR_MOD1, LEFT);
   y += lineH;
-  drawString(col1, y, "* Multi-idioma ES/EN/FR", LEFT);
+  drawString(col1, y, TXT_CR_MOD2, LEFT);
   y += lineH;
-  drawString(col1, y, "* Portal cautivo y config web", LEFT);
+  drawString(col1, y, TXT_CR_MOD3, LEFT);
   y += lineH;
-  drawString(col1, y, "* Historial SD Card + FFat", LEFT);
+  drawString(col1, y, TXT_CR_MOD4, LEFT);
   y += lineH;
-  drawString(col1, y, "* UV Index y Calidad del Aire", LEFT);
+  drawString(col1, y, TXT_CR_MOD5, LEFT);
   y += lineH;
-  drawString(col1, y, "* Calendario mensual y anual", LEFT);
+  drawString(col1, y, TXT_CR_MOD6, LEFT);
 
   // Right column
   y = 90;
 
   setFont(OpenSans12B);
-  drawString(col2, y, "Hardware", LEFT);
+  drawString(col2, y, TXT_CR_HW, LEFT);
   drawFastHLine(col2, y + 18, 120, Grey);
   y += 28;
 
@@ -3279,7 +3605,7 @@ void DisplayInfoCreditsScreen() {
   y += lineH + 10;
 
   setFont(OpenSans12B);
-  drawString(col2, y, "Librerias", LEFT);
+  drawString(col2, y, TXT_CR_LIBS, LEFT);
   drawFastHLine(col2, y + 18, 120, Grey);
   y += 28;
 
@@ -3292,7 +3618,7 @@ void DisplayInfoCreditsScreen() {
   y += lineH + 10;
 
   setFont(OpenSans12B);
-  drawString(col2, y, "Enlaces", LEFT);
+  drawString(col2, y, TXT_CR_LINKS, LEFT);
   drawFastHLine(col2, y + 18, 100, Grey);
   y += 28;
 
@@ -3371,7 +3697,7 @@ void DisplayHistoryScreen() {
   DrawHistoryGraph(gx1, gy1, gwidth, gheight, 0, 40, TXT_GRAPH_TEMP, Units == "M" ? "°C" : "°F", hist_temp, hist_pos, readings, autoscale_on, barchart_off, actualHours, historyShowWeek, startHour);
 
   // Pressure - top right
-  DrawHistoryGraph(gx2, gy1, gwidth, gheight, 900, 1050, TXT_GRAPH_PRESSURE, Units == "M" ? "hPa" : "in", hist_press, hist_pos, readings, autoscale_on, barchart_off, actualHours, historyShowWeek, startHour);
+  DrawHistoryGraph(gx2, gy1, gwidth, gheight, 900, 1050, TXT_GRAPH_PRESSURE, Units == "M" ? (currentLang == 0 ? "mb" : "hPa") : "in", hist_press, hist_pos, readings, autoscale_on, barchart_off, actualHours, historyShowWeek, startHour);
 
   // Humidity - bottom left
   DrawHistoryGraph(gx1, gy2, gwidth, gheight, 0, 100, TXT_GRAPH_HUMIDITY, "%", hist_hum, hist_pos, readings, autoscale_off, barchart_off, actualHours, historyShowWeek, startHour);

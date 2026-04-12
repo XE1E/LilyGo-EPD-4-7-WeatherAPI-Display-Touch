@@ -20,6 +20,7 @@ enum ScreenState {
   SCREEN_CALENDAR_YEAR,
   SCREEN_INFO_FEATURES1,
   SCREEN_INFO_FEATURES2,
+  SCREEN_INFO_UPDATE,
   SCREEN_INFO_HELP,
   SCREEN_INFO_CREDITS,
   SCREEN_CALLSIGN,
@@ -290,15 +291,27 @@ ScreenState checkTouchZone(int touchX, int touchY, ScreenState currentState) {
     return SCREEN_INFO;
   }
 
-  // Special handling for INFO_FEATURES2 screen - arrow to Help or back to Info
+  // Special handling for INFO_FEATURES2 screen - arrow to Update or back to Info
   if (currentState == SCREEN_INFO_FEATURES2) {
-    // Right arrow zone - go to Help
+    // Right arrow zone - go to Update Info
     if (touchX >= 800 && touchX <= 960 && touchY >= 230 && touchY <= 330) {
-      Serial.println(">>> Features2 next arrow - going to Help");
-      return SCREEN_INFO_HELP;
+      Serial.println(">>> Features2 next arrow - going to Update Info");
+      return SCREEN_INFO_UPDATE;
     }
     // Any other touch returns to Info
     Serial.println(">>> Touch on FEATURES2 - returning to Info");
+    return SCREEN_INFO;
+  }
+
+  // Special handling for INFO_UPDATE screen - arrow to Help or back to Info
+  if (currentState == SCREEN_INFO_UPDATE) {
+    // Right arrow zone - go to Help
+    if (touchX >= 800 && touchX <= 960 && touchY >= 230 && touchY <= 330) {
+      Serial.println(">>> Update next arrow - going to Help");
+      return SCREEN_INFO_HELP;
+    }
+    // Any other touch returns to Info
+    Serial.println(">>> Touch on UPDATE - returning to Info");
     return SCREEN_INFO;
   }
 
