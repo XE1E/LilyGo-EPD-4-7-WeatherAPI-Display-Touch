@@ -412,6 +412,134 @@ const char* TXT_HELP_BOOT4_ARR[] = { "4. Cargar firmware", "4. Upload firmware",
 #define TXT_INFO_HELP String(TXT_INFO_HELP_ARR[currentLang])
 #define TXT_INFO_CREDITS String(TXT_INFO_CREDITS_ARR[currentLang])
 
+// ============== HARDWARE SCREEN ==============
+const char* TXT_HW_MICRO_ARR[] = { "Microcontrolador: ESP32-S3", "Microcontroller: ESP32-S3", "Microcontroleur: ESP32-S3" };
+const char* TXT_HW_CPU_ARR[] = { "CPU: Dual-core Xtensa LX7 @ 240MHz", "CPU: Dual-core Xtensa LX7 @ 240MHz", "CPU: Dual-core Xtensa LX7 @ 240MHz" };
+const char* TXT_HW_FLASH_ARR[] = { "Memoria Flash: 16 MB", "Flash Memory: 16 MB", "Memoire Flash: 16 Mo" };
+const char* TXT_HW_PSRAM_ARR[] = { "PSRAM: 8 MB OPI", "PSRAM: 8 MB OPI", "PSRAM: 8 Mo OPI" };
+const char* TXT_HW_WIFI_ARR[] = { "WiFi: 802.11 b/g/n 2.4GHz", "WiFi: 802.11 b/g/n 2.4GHz", "WiFi: 802.11 b/g/n 2.4GHz" };
+const char* TXT_HW_BLE_ARR[] = { "Bluetooth: BLE 5.0 (disponible)", "Bluetooth: BLE 5.0 (available)", "Bluetooth: BLE 5.0 (disponible)" };
+const char* TXT_HW_ACTIVE_ARR[] = { "Consumo Activo: ~150mA", "Active Power: ~150mA", "Conso. Actif: ~150mA" };
+const char* TXT_HW_SLEEP_ARR[] = { "Consumo Deep Sleep: ~10uA", "Deep Sleep Power: ~10uA", "Conso. Veille: ~10uA" };
+const char* TXT_HW_DISPLAY_ARR[] = { "Pantalla: E-Paper 4.7\"", "Display: E-Paper 4.7\"", "Ecran: E-Paper 4.7\"" };
+const char* TXT_HW_RES_ARR[] = { "Resolucion: 960 x 540 px", "Resolution: 960 x 540 px", "Resolution: 960 x 540 px" };
+const char* TXT_HW_COLORS_ARR[] = { "Colores: 16 niveles gris", "Colors: 16 grayscale levels", "Couleurs: 16 niveaux gris" };
+const char* TXT_HW_REFRESH_ARR[] = { "Tiempo refresco: ~0.5 seg", "Refresh time: ~0.5 sec", "Temps raffraich.: ~0.5 sec" };
+const char* TXT_HW_ANGLE_ARR[] = { "Angulo vision: ~180 grados", "Viewing angle: ~180 degrees", "Angle de vue: ~180 degres" };
+const char* TXT_HW_TOUCH_ARR[] = { "Touch: GT911 Capacitivo I2C", "Touch: GT911 Capacitive I2C", "Touch: GT911 Capacitif I2C" };
+const char* TXT_HW_BATT_ARR[] = { "Bateria: LiPo 3.7V (3.2-4.2V)", "Battery: LiPo 3.7V (3.2-4.2V)", "Batterie: LiPo 3.7V (3.2-4.2V)" };
+const char* TXT_HW_SD_ARR[] = { "MicroSD: SPI FAT32/exFAT", "MicroSD: SPI FAT32/exFAT", "MicroSD: SPI FAT32/exFAT" };
+
+#define TXT_HW_MICRO String(TXT_HW_MICRO_ARR[currentLang])
+#define TXT_HW_CPU String(TXT_HW_CPU_ARR[currentLang])
+#define TXT_HW_FLASH String(TXT_HW_FLASH_ARR[currentLang])
+#define TXT_HW_PSRAM String(TXT_HW_PSRAM_ARR[currentLang])
+#define TXT_HW_WIFI String(TXT_HW_WIFI_ARR[currentLang])
+#define TXT_HW_BLE String(TXT_HW_BLE_ARR[currentLang])
+#define TXT_HW_ACTIVE String(TXT_HW_ACTIVE_ARR[currentLang])
+#define TXT_HW_SLEEP String(TXT_HW_SLEEP_ARR[currentLang])
+#define TXT_HW_DISPLAY String(TXT_HW_DISPLAY_ARR[currentLang])
+#define TXT_HW_RES String(TXT_HW_RES_ARR[currentLang])
+#define TXT_HW_COLORS String(TXT_HW_COLORS_ARR[currentLang])
+#define TXT_HW_REFRESH String(TXT_HW_REFRESH_ARR[currentLang])
+#define TXT_HW_ANGLE String(TXT_HW_ANGLE_ARR[currentLang])
+#define TXT_HW_TOUCH String(TXT_HW_TOUCH_ARR[currentLang])
+#define TXT_HW_BATT String(TXT_HW_BATT_ARR[currentLang])
+#define TXT_HW_SD String(TXT_HW_SD_ARR[currentLang])
+
+// ============== SOFTWARE SCREEN ==============
+const char* TXT_SW_SCREENS_ARR[] = { "Pantallas: 13 navegables", "Screens: 13 navigable", "Ecrans: 13 navigables" };
+const char* TXT_SW_MULTIWIFI_ARR[] = { "Multi-WiFi: Hasta 3 redes", "Multi-WiFi: Up to 3 networks", "Multi-WiFi: Jusqu'a 3 reseaux" };
+const char* TXT_SW_HISTSD_ARR[] = { "Historial SD: ~1 ano de datos", "SD History: ~1 year of data", "Historique SD: ~1 an de donnees" };
+const char* TXT_SW_HISTINT_ARR[] = { "Historial Int: ~7 dias (FFat)", "Int. History: ~7 days (FFat)", "Historique Int: ~7 jours (FFat)" };
+const char* TXT_SW_UPDATE_ARR[] = { "Actualizacion: 5-120 min config.", "Update: 5-120 min configurable", "Mise a jour: 5-120 min config." };
+const char* TXT_SW_LANGS_ARR[] = { "Idiomas: ES / EN / FR", "Languages: ES / EN / FR", "Langues: ES / EN / FR" };
+const char* TXT_SW_APMODE_ARR[] = { "Modo AP: WeatherStation-Setup", "AP Mode: WeatherStation-Setup", "Mode AP: WeatherStation-Setup" };
+const char* TXT_SW_PORTAL_ARR[] = { "Portal: http://192.168.4.1", "Portal: http://192.168.4.1", "Portail: http://192.168.4.1" };
+const char* TXT_SW_PASS_ARR[] = { "Password: weather123", "Password: weather123", "Mot de passe: weather123" };
+const char* TXT_SW_API_ARR[] = { "API: WeatherAPI.com", "API: WeatherAPI.com", "API: WeatherAPI.com" };
+const char* TXT_SW_ENDPOINT_ARR[] = { "Endpoint: /v1/forecast.json", "Endpoint: /v1/forecast.json", "Endpoint: /v1/forecast.json" };
+const char* TXT_SW_FORECAST_ARR[] = { "Pronostico: 3 dias", "Forecast: 3 days", "Previsions: 3 jours" };
+const char* TXT_SW_UVAQI_ARR[] = { "UV/AQI: Incluido", "UV/AQI: Included", "UV/IQA: Inclus" };
+const char* TXT_SW_ONECALL_ARR[] = { "Una llamada por actualizacion", "One call per update", "Un appel par mise a jour" };
+const char* TXT_SW_LIMIT_ARR[] = { "Limite gratis: 1M llamadas/mes", "Free limit: 1M calls/month", "Limite gratuit: 1M appels/mois" };
+const char* TXT_SW_STORAGE_ARR[] = { "Almacenamiento: NVS Preferences", "Storage: NVS Preferences", "Stockage: NVS Preferences" };
+
+#define TXT_SW_SCREENS String(TXT_SW_SCREENS_ARR[currentLang])
+#define TXT_SW_MULTIWIFI String(TXT_SW_MULTIWIFI_ARR[currentLang])
+#define TXT_SW_HISTSD String(TXT_SW_HISTSD_ARR[currentLang])
+#define TXT_SW_HISTINT String(TXT_SW_HISTINT_ARR[currentLang])
+#define TXT_SW_UPDATE String(TXT_SW_UPDATE_ARR[currentLang])
+#define TXT_SW_LANGS String(TXT_SW_LANGS_ARR[currentLang])
+#define TXT_SW_APMODE String(TXT_SW_APMODE_ARR[currentLang])
+#define TXT_SW_PORTAL String(TXT_SW_PORTAL_ARR[currentLang])
+#define TXT_SW_PASS String(TXT_SW_PASS_ARR[currentLang])
+#define TXT_SW_API String(TXT_SW_API_ARR[currentLang])
+#define TXT_SW_ENDPOINT String(TXT_SW_ENDPOINT_ARR[currentLang])
+#define TXT_SW_FORECAST String(TXT_SW_FORECAST_ARR[currentLang])
+#define TXT_SW_UVAQI String(TXT_SW_UVAQI_ARR[currentLang])
+#define TXT_SW_ONECALL String(TXT_SW_ONECALL_ARR[currentLang])
+#define TXT_SW_LIMIT String(TXT_SW_LIMIT_ARR[currentLang])
+#define TXT_SW_STORAGE String(TXT_SW_STORAGE_ARR[currentLang])
+
+// ============== CREDITS SCREEN ==============
+const char* TXT_CR_AUTHOR_ARR[] = { "Autor Original", "Original Author", "Auteur Original" };
+const char* TXT_CR_ADAPTATIONS_ARR[] = { "Adaptaciones", "Adaptations", "Adaptations" };
+const char* TXT_CR_ADAPT1_ARR[] = { "markbirss - Adaptacion LilyGo EPD", "markbirss - LilyGo EPD adaptation", "markbirss - Adaptation LilyGo EPD" };
+const char* TXT_CR_ADAPT2_ARR[] = { "Xinyuan-LilyGO - Fork oficial", "Xinyuan-LilyGO - Official fork", "Xinyuan-LilyGO - Fork officiel" };
+const char* TXT_CR_ADAPT3_ARR[] = { "Stefan Maetschke 2025 - makerguides.com", "Stefan Maetschke 2025 - makerguides.com", "Stefan Maetschke 2025 - makerguides.com" };
+const char* TXT_CR_MODS_ARR[] = { "Modificaciones XE1E 2026", "XE1E Modifications 2026", "Modifications XE1E 2026" };
+const char* TXT_CR_MOD1_ARR[] = { "* Navegacion tactil 13 pantallas", "* Touch navigation 13 screens", "* Navigation tactile 13 ecrans" };
+const char* TXT_CR_MOD2_ARR[] = { "* Multi-idioma ES/EN/FR", "* Multi-language ES/EN/FR", "* Multi-langue ES/EN/FR" };
+const char* TXT_CR_MOD3_ARR[] = { "* Portal cautivo y config web", "* Captive portal and web config", "* Portail captif et config web" };
+const char* TXT_CR_MOD4_ARR[] = { "* Historial SD Card + FFat", "* SD Card + FFat history", "* Historique SD Card + FFat" };
+const char* TXT_CR_MOD5_ARR[] = { "* UV Index y Calidad del Aire", "* UV Index and Air Quality", "* Indice UV et Qualite de l'Air" };
+const char* TXT_CR_MOD6_ARR[] = { "* Calendario mensual y anual", "* Monthly and yearly calendar", "* Calendrier mensuel et annuel" };
+const char* TXT_CR_HW_ARR[] = { "Hardware", "Hardware", "Materiel" };
+const char* TXT_CR_LIBS_ARR[] = { "Librerias", "Libraries", "Bibliotheques" };
+const char* TXT_CR_LINKS_ARR[] = { "Enlaces", "Links", "Liens" };
+
+#define TXT_CR_AUTHOR String(TXT_CR_AUTHOR_ARR[currentLang])
+#define TXT_CR_ADAPTATIONS String(TXT_CR_ADAPTATIONS_ARR[currentLang])
+#define TXT_CR_ADAPT1 String(TXT_CR_ADAPT1_ARR[currentLang])
+#define TXT_CR_ADAPT2 String(TXT_CR_ADAPT2_ARR[currentLang])
+#define TXT_CR_ADAPT3 String(TXT_CR_ADAPT3_ARR[currentLang])
+#define TXT_CR_MODS String(TXT_CR_MODS_ARR[currentLang])
+#define TXT_CR_MOD1 String(TXT_CR_MOD1_ARR[currentLang])
+#define TXT_CR_MOD2 String(TXT_CR_MOD2_ARR[currentLang])
+#define TXT_CR_MOD3 String(TXT_CR_MOD3_ARR[currentLang])
+#define TXT_CR_MOD4 String(TXT_CR_MOD4_ARR[currentLang])
+#define TXT_CR_MOD5 String(TXT_CR_MOD5_ARR[currentLang])
+#define TXT_CR_MOD6 String(TXT_CR_MOD6_ARR[currentLang])
+#define TXT_CR_HW String(TXT_CR_HW_ARR[currentLang])
+#define TXT_CR_LIBS String(TXT_CR_LIBS_ARR[currentLang])
+#define TXT_CR_LINKS String(TXT_CR_LINKS_ARR[currentLang])
+
+// ============== UPDATE INFO SCREEN ==============
+const char* TXT_INFO_UPDATE_ARR[] = { "INFORMACION DE ACTUALIZACION", "UPDATE INFORMATION", "INFORMATIONS DE MISE A JOUR" };
+const char* TXT_UPD_STATION_ARR[] = { "Informacion de Estacion", "Station Information", "Informations Station" };
+const char* TXT_UPD_LAST_UPDATE_ARR[] = { "Ultima actualizacion:", "Last update:", "Derniere mise a jour:" };
+const char* TXT_UPD_STATION_ID_ARR[] = { "ID Estacion:", "Station ID:", "ID Station:" };
+const char* TXT_UPD_STATION_NAME_ARR[] = { "Nombre estacion:", "Station name:", "Nom station:" };
+const char* TXT_UPD_COORDINATES_ARR[] = { "Coordenadas:", "Coordinates:", "Coordonnees:" };
+const char* TXT_UPD_DATA_TIME_ARR[] = { "Datos de estacion:", "Station data:", "Donnees station:" };
+const char* TXT_UPD_NETWORK_ARR[] = { "Informacion de Red", "Network Information", "Informations Reseau" };
+const char* TXT_UPD_WIFI_NAME_ARR[] = { "Red WiFi:", "WiFi Network:", "Reseau WiFi:" };
+const char* TXT_UPD_SIGNAL_ARR[] = { "Nivel senal:", "Signal level:", "Niveau signal:" };
+const char* TXT_UPD_IP_ARR[] = { "Direccion IP:", "IP Address:", "Adresse IP:" };
+
+#define TXT_INFO_UPDATE String(TXT_INFO_UPDATE_ARR[currentLang])
+#define TXT_UPD_STATION String(TXT_UPD_STATION_ARR[currentLang])
+#define TXT_UPD_LAST_UPDATE String(TXT_UPD_LAST_UPDATE_ARR[currentLang])
+#define TXT_UPD_STATION_ID String(TXT_UPD_STATION_ID_ARR[currentLang])
+#define TXT_UPD_STATION_NAME String(TXT_UPD_STATION_NAME_ARR[currentLang])
+#define TXT_UPD_COORDINATES String(TXT_UPD_COORDINATES_ARR[currentLang])
+#define TXT_UPD_DATA_TIME String(TXT_UPD_DATA_TIME_ARR[currentLang])
+#define TXT_UPD_NETWORK String(TXT_UPD_NETWORK_ARR[currentLang])
+#define TXT_UPD_WIFI_NAME String(TXT_UPD_WIFI_NAME_ARR[currentLang])
+#define TXT_UPD_SIGNAL String(TXT_UPD_SIGNAL_ARR[currentLang])
+#define TXT_UPD_IP String(TXT_UPD_IP_ARR[currentLang])
+
 // ============== DISPLAY LABELS ==============
 const char* TXT_HUMIDITY_ARR[] = { "Humedad", "Humidity", "Humidite" };
 const char* TXT_PRESSURE_ARR[] = { "Presion", "Pressure", "Pression" };
@@ -421,6 +549,8 @@ const char* TXT_WIND_ARR[] = { "Viento", "Wind", "Vent" };
 const char* TXT_WIND_DIR_ARR[] = { "Direccion Viento", "Wind Direction", "Direction Vent" };
 const char* TXT_GUSTS_ARR[] = { "Rafagas", "Gusts", "Rafales" };
 const char* TXT_RAIN_PROB_ARR[] = { "Prob. Lluvia", "Rain Prob.", "Prob. Pluie" };
+const char* TXT_RAIN_24H_ARR[] = { "Lluvia 24h", "Rain 24h", "Pluie 24h" };
+const char* TXT_RAIN_TODAY_ARR[] = { "Lluvia Hoy", "Rain Today", "Pluie Jour" };
 const char* TXT_FEELS_LIKE_ARR[] = { "Sensacion termica", "Feels like", "Ressenti" };
 const char* TXT_DEWPOINT_ARR[] = { "Punto de rocio", "Dew Point", "Point de rosee" };
 const char* TXT_UV_INDEX_ARR[] = { "Indice UV", "UV Index", "Indice UV" };
@@ -452,6 +582,8 @@ const char* TXT_UV_EXT_S_ARR[] = { "Extr.", "Extr.", "Extr." };
 #define TXT_WIND_DIR String(TXT_WIND_DIR_ARR[currentLang])
 #define TXT_GUSTS String(TXT_GUSTS_ARR[currentLang])
 #define TXT_RAIN_PROB String(TXT_RAIN_PROB_ARR[currentLang])
+#define TXT_RAIN_24H String(TXT_RAIN_24H_ARR[currentLang])
+#define TXT_RAIN_TODAY String(TXT_RAIN_TODAY_ARR[currentLang])
 #define TXT_FEELS_LIKE String(TXT_FEELS_LIKE_ARR[currentLang])
 #define TXT_DEWPOINT String(TXT_DEWPOINT_ARR[currentLang])
 #define TXT_UV_INDEX String(TXT_UV_INDEX_ARR[currentLang])
@@ -479,6 +611,62 @@ void initLanguage(const char* lang) {
   setLanguage(lang);
   updateWeekdayPointer();
   updateMonthPointer();
+}
+
+// ============== WEATHER CONDITION SHORT DESCRIPTIONS ==============
+// Maps WeatherAPI condition codes to short descriptions
+String getConditionShortText(int code) {
+  switch(code) {
+    case 1000: { const char* t[] = {"Soleado", "Sunny", "Ensoleille"}; return t[currentLang]; }
+    case 1003: { const char* t[] = {"Parcialmente nublado", "Partly cloudy", "Partiellement nuageux"}; return t[currentLang]; }
+    case 1006: { const char* t[] = {"Nublado", "Cloudy", "Nuageux"}; return t[currentLang]; }
+    case 1009: { const char* t[] = {"Cubierto", "Overcast", "Couvert"}; return t[currentLang]; }
+    case 1030: { const char* t[] = {"Neblina", "Mist", "Brume"}; return t[currentLang]; }
+    case 1063: { const char* t[] = {"Lluvia posible", "Rain possible", "Pluie possible"}; return t[currentLang]; }
+    case 1066: { const char* t[] = {"Nieve posible", "Snow possible", "Neige possible"}; return t[currentLang]; }
+    case 1069: { const char* t[] = {"Aguanieve posible", "Sleet possible", "Gresil possible"}; return t[currentLang]; }
+    case 1072: { const char* t[] = {"Llovizna helada", "Freezing drizzle", "Bruine verglacante"}; return t[currentLang]; }
+    case 1087: { const char* t[] = {"Tormenta electrica", "Thunderstorm", "Orage"}; return t[currentLang]; }
+    case 1114: { const char* t[] = {"Ventisca", "Blowing snow", "Poudrerie"}; return t[currentLang]; }
+    case 1117: { const char* t[] = {"Nevada intensa", "Blizzard", "Blizzard"}; return t[currentLang]; }
+    case 1135: { const char* t[] = {"Niebla", "Fog", "Brouillard"}; return t[currentLang]; }
+    case 1147: { const char* t[] = {"Niebla helada", "Freezing fog", "Brouillard givrant"}; return t[currentLang]; }
+    case 1150: { const char* t[] = {"Llovizna ligera", "Light drizzle", "Bruine legere"}; return t[currentLang]; }
+    case 1153: { const char* t[] = {"Llovizna", "Drizzle", "Bruine"}; return t[currentLang]; }
+    case 1168: { const char* t[] = {"Llovizna helada", "Freezing drizzle", "Bruine verglacante"}; return t[currentLang]; }
+    case 1171: { const char* t[] = {"Llovizna fuerte", "Heavy drizzle", "Forte bruine"}; return t[currentLang]; }
+    case 1180: { const char* t[] = {"Lluvia ligera", "Light rain", "Pluie legere"}; return t[currentLang]; }
+    case 1183: { const char* t[] = {"Lluvia ligera", "Light rain", "Pluie legere"}; return t[currentLang]; }
+    case 1186: { const char* t[] = {"Lluvia moderada", "Moderate rain", "Pluie moderee"}; return t[currentLang]; }
+    case 1189: { const char* t[] = {"Lluvia moderada", "Moderate rain", "Pluie moderee"}; return t[currentLang]; }
+    case 1192: { const char* t[] = {"Lluvia fuerte", "Heavy rain", "Forte pluie"}; return t[currentLang]; }
+    case 1195: { const char* t[] = {"Lluvia intensa", "Intense rain", "Pluie intense"}; return t[currentLang]; }
+    case 1198: { const char* t[] = {"Lluvia helada", "Freezing rain", "Pluie verglacante"}; return t[currentLang]; }
+    case 1201: { const char* t[] = {"Lluvia helada", "Freezing rain", "Pluie verglacante"}; return t[currentLang]; }
+    case 1204: { const char* t[] = {"Aguanieve ligera", "Light sleet", "Gresil leger"}; return t[currentLang]; }
+    case 1207: { const char* t[] = {"Aguanieve moderada", "Moderate sleet", "Gresil modere"}; return t[currentLang]; }
+    case 1210: { const char* t[] = {"Nieve ligera", "Light snow", "Neige legere"}; return t[currentLang]; }
+    case 1213: { const char* t[] = {"Nieve ligera", "Light snow", "Neige legere"}; return t[currentLang]; }
+    case 1216: { const char* t[] = {"Nieve moderada", "Moderate snow", "Neige moderee"}; return t[currentLang]; }
+    case 1219: { const char* t[] = {"Nieve moderada", "Moderate snow", "Neige moderee"}; return t[currentLang]; }
+    case 1222: { const char* t[] = {"Nieve fuerte", "Heavy snow", "Forte neige"}; return t[currentLang]; }
+    case 1225: { const char* t[] = {"Nieve intensa", "Intense snow", "Neige intense"}; return t[currentLang]; }
+    case 1237: { const char* t[] = {"Granizo", "Ice pellets", "Grelons"}; return t[currentLang]; }
+    case 1240: { const char* t[] = {"Chubascos ligeros", "Light showers", "Averses legeres"}; return t[currentLang]; }
+    case 1243: { const char* t[] = {"Chubascos moderados", "Moderate showers", "Averses moderees"}; return t[currentLang]; }
+    case 1246: { const char* t[] = {"Chubascos fuertes", "Heavy showers", "Fortes averses"}; return t[currentLang]; }
+    case 1249: { const char* t[] = {"Aguanieve ligera", "Light sleet", "Gresil leger"}; return t[currentLang]; }
+    case 1252: { const char* t[] = {"Aguanieve moderada", "Moderate sleet", "Gresil modere"}; return t[currentLang]; }
+    case 1255: { const char* t[] = {"Nieve ligera", "Light snow", "Neige legere"}; return t[currentLang]; }
+    case 1258: { const char* t[] = {"Nieve moderada", "Moderate snow", "Neige moderee"}; return t[currentLang]; }
+    case 1261: { const char* t[] = {"Granizo ligero", "Light ice", "Grele legere"}; return t[currentLang]; }
+    case 1264: { const char* t[] = {"Granizo moderado", "Moderate ice", "Grele moderee"}; return t[currentLang]; }
+    case 1273: { const char* t[] = {"Tormenta electrica con lluvia", "Thunderstorm with rain", "Orage avec pluie"}; return t[currentLang]; }
+    case 1276: { const char* t[] = {"Tormenta electrica fuerte", "Heavy thunderstorm", "Orage violent"}; return t[currentLang]; }
+    case 1279: { const char* t[] = {"Tormenta electrica con nieve", "Thunderstorm with snow", "Orage avec neige"}; return t[currentLang]; }
+    case 1282: { const char* t[] = {"Tormenta electrica fuerte", "Heavy thunderstorm", "Orage violent"}; return t[currentLang]; }
+    default: { const char* t[] = {"Desconocido", "Unknown", "Inconnu"}; return t[currentLang]; }
+  }
 }
 
 #endif // LANG_H

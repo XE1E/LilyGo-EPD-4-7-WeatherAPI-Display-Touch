@@ -162,50 +162,8 @@ void drawCloseQuote(int x, int y) {
   fillRect(x + gap + w, y, w, h, DarkGrey);
 }
 
-// Word wrap helper - returns number of lines used
-int drawQuoteText(int centerX, int startY, int maxWidth, int lineHeight, const char* text, int maxLines) {
-  String str = text;
-  int lines = 0;
-  int currentY = startY;
-
-  setFont(OpenSans16B);   // Bigger font
-  int charWidth = 18;     // More margin to avoid overlap with frame/quotes
-
-  int charsPerLine = maxWidth / charWidth;
-  if (charsPerLine < 10) charsPerLine = 10;
-
-  Serial.printf("Quote wrap: text len=%d, maxWidth=%d, charsPerLine=%d\n", str.length(), maxWidth, charsPerLine);
-
-  while (str.length() > 0 && lines < maxLines) {
-    Serial.printf("  Line %d: remaining=%d chars\n", lines, str.length());
-
-    if ((int)str.length() <= charsPerLine) {
-      // Last line - draw centered
-      Serial.printf("  -> Final line: %s\n", str.c_str());
-      drawString(centerX, currentY, str, CENTER);
-      lines++;
-      break;
-    }
-
-    // Find last space within limit
-    int breakPoint = charsPerLine;
-    while (breakPoint > 0 && str.charAt(breakPoint) != ' ') {
-      breakPoint--;
-    }
-    if (breakPoint == 0) breakPoint = charsPerLine;  // No space found, force break
-
-    String line = str.substring(0, breakPoint);
-    Serial.printf("  -> Draw: '%s' (break at %d)\n", line.c_str(), breakPoint);
-    drawString(centerX, currentY, line, CENTER);
-
-    str = str.substring(breakPoint + 1);  // +1 to skip the space
-    currentY += lineHeight;
-    lines++;
-  }
-
-  Serial.printf("Quote wrap: drew %d lines\n", lines);
-  return lines;
-}
+// Forward declaration - defined in main .ino
+int drawWrappedText(int centerX, int startY, int maxWidth, int lineHeight, const char* text, int maxLines);
 
 // Main display function
 void DisplayQuoteScreen() {
@@ -246,9 +204,10 @@ void DisplayQuoteScreen() {
   drawOpenQuote(frameX + 55, frameY + 80);
 
   // Quote text - centered, wrapped
+  setFont(OpenSans16B);
   int textStartY = frameY + 120;
   int textMaxWidth = frameW - 200;  // More margin for safety
-  int linesUsed = drawQuoteText(SCREEN_WIDTH / 2, textStartY, textMaxWidth, 45, currentQuote.text, 6);
+  int linesUsed = drawWrappedText(SCREEN_WIDTH / 2, textStartY, textMaxWidth, 45, currentQuote.text, 6);
 
   // Closing quote mark
   int closeQuoteY = textStartY + (linesUsed * 45) - 15;

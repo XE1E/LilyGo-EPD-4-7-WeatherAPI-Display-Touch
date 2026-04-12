@@ -228,41 +228,8 @@ void drawNarrativeFrame(int x, int y, int w, int h) {
   fillRect(x + w - cornerInset - cornerSize, y + h - cornerInset - cornerSize, cornerSize, cornerSize, Black);
 }
 
-// Word wrap for narrative text
-int drawNarrativeText(int centerX, int startY, int maxWidth, int lineHeight, const char* text, int maxLines) {
-  String str = text;
-  int lines = 0;
-  int currentY = startY;
-
-  setFont(OpenSans8B);
-  int charWidth = 7;  // Smaller font for more text
-
-  int charsPerLine = maxWidth / charWidth;
-  if (charsPerLine < 10) charsPerLine = 10;
-
-  while (str.length() > 0 && lines < maxLines) {
-    if ((int)str.length() <= charsPerLine) {
-      drawString(centerX, currentY, str, CENTER);
-      lines++;
-      break;
-    }
-
-    int breakPoint = charsPerLine;
-    while (breakPoint > 0 && str.charAt(breakPoint) != ' ') {
-      breakPoint--;
-    }
-    if (breakPoint == 0) breakPoint = charsPerLine;
-
-    String line = str.substring(0, breakPoint);
-    drawString(centerX, currentY, line, CENTER);
-
-    str = str.substring(breakPoint + 1);
-    currentY += lineHeight;
-    lines++;
-  }
-
-  return lines;
-}
+// Forward declaration - defined in main .ino
+int drawWrappedText(int centerX, int startY, int maxWidth, int lineHeight, const char* text, int maxLines);
 
 // Main display function
 void DisplayWeatherNarrativeScreen() {
@@ -308,9 +275,17 @@ void DisplayWeatherNarrativeScreen() {
   }
 
   // Narrative text
+  setFont(OpenSans8B);
   int textStartY = frameY + 100;
-  int textMaxWidth = frameW - 214;  // ~69 chars per line
-  drawNarrativeText(SCREEN_WIDTH / 2, textStartY, textMaxWidth, 32, weatherNarrative.text, 11);
+  int textMaxWidth = frameW - 50;  // ~95 chars per line (+25 chars from original 70)
+
+  // Clean text - replace newlines with spaces to prevent overlap
+  String cleanText = weatherNarrative.text;
+  cleanText.replace("\n", " ");
+  cleanText.replace("\r", " ");
+  cleanText.replace("  ", " ");  // Remove double spaces
+
+  drawWrappedText(SCREEN_WIDTH / 2, textStartY, textMaxWidth, 32, cleanText.c_str(), 11);
 
   // Footer hint - multilingual
   const char* footer[] = {"Toca para volver", "Touch to return", "Touchez pour revenir"};

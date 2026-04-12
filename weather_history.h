@@ -297,6 +297,27 @@ float getHistoryDays() {
   return (newest.timestamp - oldest.timestamp) / 86400.0;
 }
 
+// Get accumulated rainfall for last N hours from history
+float getRainfallForHours(int hours) {
+  if (!historyInitialized || historyCount == 0) return 0;
+
+  uint32_t now = time(nullptr);
+  uint32_t cutoff = now - (hours * 3600);
+
+  float totalRainfall = 0;
+
+  for (int i = 0; i < historyCount; i++) {
+    WeatherReading reading;
+    if (getWeatherReading(i, reading)) {
+      if (reading.timestamp >= cutoff) {
+        totalRainfall += reading.rainfall / 100.0;  // Convert back to mm
+      }
+    }
+  }
+
+  return totalRainfall;
+}
+
 // Get actual hours span from oldest to newest reading in the requested range
 float getHistoryHoursSpan(int requestedHours) {
   if (!historyInitialized || historyCount < 2) return 0;

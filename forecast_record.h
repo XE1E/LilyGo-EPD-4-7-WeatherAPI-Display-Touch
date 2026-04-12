@@ -27,6 +27,7 @@ typedef struct { // For current Day and Day 1, 2, 3, etc
   float    Windspeed;
   float    Gust;          // Wind gust speed
   float    Rainfall;
+  float    DailyRainfall;  // Total precipitation for the day (from API)
   float    Snowfall;
   float    Pop;           // Probability of precipitation (0-1)
   int      ChanceOfRain;  // Chance of rain %
@@ -56,6 +57,8 @@ typedef struct { // For current Day and Day 1, 2, 3, etc
   float    SO2;           // Sulphur dioxide ug/m3
   // Location
   String   Region;        // State/Region
+  // Condition code for short description
+  int      ConditionCode; // WeatherAPI condition code
 } Forecast_record_type;
 
 #endif /* ifndef FORECAST_RECORD_H_ */
