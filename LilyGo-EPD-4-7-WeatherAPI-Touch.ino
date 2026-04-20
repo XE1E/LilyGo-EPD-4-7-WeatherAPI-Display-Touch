@@ -92,7 +92,7 @@ String  Time_str = "--:--:--";
 String  Date_str = "-- --- ----";
 // Last successful weather update (survives deep sleep)
 RTC_DATA_ATTR char LastUpdateTime[12] = "--:--:--";
-RTC_DATA_ATTR char LastUpdateDate[20] = "-- --- ----";
+RTC_DATA_ATTR char LastUpdateDate[32] = "-- --- ----";
 RTC_DATA_ATTR bool hasValidWeatherData = false;
 // Station info from last API response
 RTC_DATA_ATTR char StationName[50] = "";
@@ -959,20 +959,49 @@ bool DecodeWeatherAPI(const String& json) {
   Serial.printf("Device Time: %02d:%02d:%02d (TZ: %s, GMT: %d, DST: %d)\n",
     CurrentHour, CurrentMin, CurrentSec, Timezone, gmtOffset_sec, daylightOffset_sec);
 
-  // Calculate timezone offset between API and device
-  // API localtime format: "2026-04-11 17:36"
-  int spacePos = apiLocaltime.indexOf(' ');
-  if (spacePos > 0) {
-    String apiTimeStr = apiLocaltime.substring(spacePos + 1);
-    int colonPos = apiTimeStr.indexOf(':');
-    if (colonPos > 0) {
-      int apiHour = apiTimeStr.substring(0, colonPos).toInt();
-      apiTimezoneOffset = apiHour - CurrentHour;  // Negative if API is behind device time
-      // Handle day boundary (e.g., device 00:30, API 23:30 = +1 hour offset)
-      if (apiTimezoneOffset > 12) apiTimezoneOffset -= 24;
-      if (apiTimezoneOffset < -12) apiTimezoneOffset += 24;
-      if (apiTimezoneOffset != 0) {
-        Serial.printf("Timezone offset detected: %d hour(s) - will adjust sunrise/sunset\n", apiTimezoneOffset);
+  // Check if API timezone likely has DST but device doesn't
+  // WeatherAPI uses IANA timezones which include DST rules
+  // Mexico abolished DST in 2022, but WeatherAPI's database may still apply it
+  String apiTzId = location["tz_id"].as<String>();
+  bool apiMayHaveDST = (apiTzId.indexOf("Mexico") >= 0 || apiTzId.indexOf("America/") >= 0);
+  bool deviceHasNoDST = (daylightOffset_sec == 0);
+
+  // Check if we're in DST months (roughly April-October for North America)
+  // Extract month from API localtime string (format: "2026-04-11 17:36")
+  int apiMonth = apiLocaltime.substring(5, 7).toInt();  // Extract "04" from position 5-6
+  bool inDSTMonths = (apiMonth >= 4 && apiMonth <= 10);  // April (4) to October (10)
+
+  // If API likely applies DST, device doesn't, and we're in DST months,
+  // the astronomy data (sunrise/sunset) will be 1 hour ahead
+  if (apiMayHaveDST && deviceHasNoDST && inDSTMonths) {
+    // Check if the hours actually match (meaning API's "current" time doesn't show DST offset)
+    // but the astronomy calculations still use DST
+    String apiTimeStr = apiLocaltime.substring(apiLocaltime.indexOf(' ') + 1);
+    int apiHour = apiTimeStr.substring(0, apiTimeStr.indexOf(':')).toInt();
+    int hourDiff = apiHour - CurrentHour;
+    if (hourDiff > 12) hourDiff -= 24;
+    if (hourDiff < -12) hourDiff += 24;
+
+    // If current times match but we're in DST months, astronomy data likely has DST applied
+    if (abs(hourDiff) <= 1) {
+      apiTimezoneOffset = 1;  // Astronomy data is 1 hour ahead due to DST
+      Serial.println("DST correction: API astronomy data likely includes DST, device doesn't");
+      Serial.printf("Applying -1 hour offset to sunrise/sunset (apiTz: %s, DST months: yes)\n", apiTzId.c_str());
+    }
+  } else {
+    // Fallback to original hour-based calculation
+    int spacePos = apiLocaltime.indexOf(' ');
+    if (spacePos > 0) {
+      String apiTimeStr = apiLocaltime.substring(spacePos + 1);
+      int colonPos = apiTimeStr.indexOf(':');
+      if (colonPos > 0) {
+        int apiHour = apiTimeStr.substring(0, colonPos).toInt();
+        apiTimezoneOffset = apiHour - CurrentHour;
+        if (apiTimezoneOffset > 12) apiTimezoneOffset -= 24;
+        if (apiTimezoneOffset < -12) apiTimezoneOffset += 24;
+        if (apiTimezoneOffset != 0) {
+          Serial.printf("Timezone offset detected: %d hour(s) - will adjust sunrise/sunset\n", apiTimezoneOffset);
+        }
       }
     }
   }
@@ -1397,7 +1426,7 @@ void DisplayFeelsLike(int x, int y) {
     default: aqiDesc = "--";
   }
   String aqiText = TXT_AQI + ": " + String(WxConditions[0].AQI) + " - " + aqiDesc;
-  drawString(x + 275, y - 4, aqiText, LEFT);
+  drawString(x + 275, y + 1, aqiText, LEFT);
 }
 
 // Find first forecast index within 1 hour of current time
@@ -1524,8 +1553,8 @@ String adjustTimeByOffset(String timeStr, int offsetHours) {
   if (isPM && hour != 12) hour += 12;
   if (isAM && hour == 12) hour = 0;
 
-  // Apply offset
-  hour += offsetHours;
+  // Apply offset (subtract because API time ahead means sunrise/sunset need to be earlier)
+  hour -= offsetHours;
   if (hour < 0) hour += 24;
   if (hour >= 24) hour -= 24;
 
@@ -2816,12 +2845,12 @@ void DisplayAirQualityScreen() {
   int aqiLineY = 210;               // Line below AQI
 
   // Pollutants - Column 1 (PM2.5, PM10, O3)
-  int col1LabelX = 180;           // X position labels col1
-  int col1ValueX = 190;           // X position values col1
+  int col1LabelX = 220;           // X position labels col1
+  int col1ValueX = 230;           // X position values col1
 
   // Pollutants - Column 2 (CO, NO2, SO2)
-  int col2LabelX = 580;           // X position labels col2
-  int col2ValueX = 590;           // X position values col2
+  int col2LabelX = 620;           // X position labels col2
+  int col2ValueX = 630;           // X position values col2
 
   // Y rows for pollutants
   int pm25Y = 245;
@@ -2867,22 +2896,78 @@ void DisplayAirQualityScreen() {
   drawFastHLine(100, aqiLineY, SCREEN_WIDTH - 200, Grey);
 
   // Pollutant labels
-  setFont(OpenSans12B);
-  drawString(col1LabelX, pm25Y + labelAdjustY, "PM2.5:", RIGHT);
-  drawString(col1LabelX, pm10Y + labelAdjustY, "PM10:", RIGHT);
-  drawString(col1LabelX, o3Y + labelAdjustY, "O3 (" + TXT_OZONE + "):", RIGHT);
-  drawString(col2LabelX, coY + labelAdjustY, "CO:", RIGHT);
-  drawString(col2LabelX, no2Y + labelAdjustY, "NO2:", RIGHT);
-  drawString(col2LabelX, so2Y + labelAdjustY, "SO2:", RIGHT);
+  setFont(OpenSans14B);
+  drawString(col1LabelX, pm25Y, "PM2.5:", RIGHT);
+  drawString(col1LabelX, pm10Y, "PM10:", RIGHT);
+  drawString(col1LabelX, o3Y, "O3 (" + TXT_OZONE + "):", RIGHT);
+  drawString(col2LabelX, coY, "CO:", RIGHT);
+  drawString(col2LabelX, no2Y, "NO2:", RIGHT);
+  drawString(col2LabelX, so2Y, "SO2:", RIGHT);
 
-  // Pollutant values
-  setFont(OpenSans18B);
-  drawString(col1ValueX, pm25Y, String(WxConditions[0].PM2_5, 1) + " ug/m3", LEFT);
-  drawString(col1ValueX, pm10Y, String(WxConditions[0].PM10, 1) + " ug/m3", LEFT);
-  drawString(col1ValueX, o3Y, String(WxConditions[0].O3, 1) + " ug/m3", LEFT);
-  drawString(col2ValueX, coY, String(WxConditions[0].CO, 1) + " ug/m3", LEFT);
-  drawString(col2ValueX, no2Y, String(WxConditions[0].NO2, 1) + " ug/m3", LEFT);
-  drawString(col2ValueX, so2Y, String(WxConditions[0].SO2, 1) + " ug/m3", LEFT);
+  // Pollutant values with quality indicators
+  setFont(OpenSans16B);
+  // Helper lambdas for quality levels
+  auto getPM25Quality = [](float v) -> String {
+    if (v <= 12) return TXT_AQI_GOOD;
+    if (v <= 35) return TXT_AQI_MODERATE;
+    if (v <= 55) return TXT_AQI_POOR;
+    return TXT_AQI_VERY_POOR;
+  };
+  auto getPM10Quality = [](float v) -> String {
+    if (v <= 54) return TXT_AQI_GOOD;
+    if (v <= 154) return TXT_AQI_MODERATE;
+    if (v <= 254) return TXT_AQI_POOR;
+    return TXT_AQI_VERY_POOR;
+  };
+  auto getO3Quality = [](float v) -> String {
+    if (v <= 100) return TXT_AQI_GOOD;
+    if (v <= 160) return TXT_AQI_MODERATE;
+    if (v <= 215) return TXT_AQI_POOR;
+    return TXT_AQI_VERY_POOR;
+  };
+  auto getCOQuality = [](float v) -> String {
+    if (v <= 4400) return TXT_AQI_GOOD;
+    if (v <= 9400) return TXT_AQI_MODERATE;
+    if (v <= 12400) return TXT_AQI_POOR;
+    return TXT_AQI_VERY_POOR;
+  };
+  auto getNO2Quality = [](float v) -> String {
+    if (v <= 40) return TXT_AQI_GOOD;
+    if (v <= 100) return TXT_AQI_MODERATE;
+    if (v <= 200) return TXT_AQI_POOR;
+    return TXT_AQI_VERY_POOR;
+  };
+  auto getSO2Quality = [](float v) -> String {
+    if (v <= 40) return TXT_AQI_GOOD;
+    if (v <= 80) return TXT_AQI_MODERATE;
+    if (v <= 380) return TXT_AQI_POOR;
+    return TXT_AQI_VERY_POOR;
+  };
+
+  // Draw values
+  String pm25Val = String(WxConditions[0].PM2_5, 1) + " ug/m3";
+  String pm10Val = String(WxConditions[0].PM10, 1) + " ug/m3";
+  String o3Val = String(WxConditions[0].O3, 1) + " ug/m3";
+  String coVal = String(WxConditions[0].CO, 1) + " ug/m3";
+  String no2Val = String(WxConditions[0].NO2, 1) + " ug/m3";
+  String so2Val = String(WxConditions[0].SO2, 1) + " ug/m3";
+
+  drawString(col1ValueX, pm25Y, pm25Val, LEFT);
+  drawString(col1ValueX, pm10Y, pm10Val, LEFT);
+  drawString(col1ValueX, o3Y, o3Val, LEFT);
+  drawString(col2ValueX, coY, coVal, LEFT);
+  drawString(col2ValueX, no2Y, no2Val, LEFT);
+  drawString(col2ValueX, so2Y, so2Val, LEFT);
+
+  // Draw quality labels in small font
+  setFont(OpenSans8B);
+  int qualityOffset = 195;  // Offset from value X position
+  drawString(col1ValueX + qualityOffset, pm25Y + 5, "(" + getPM25Quality(WxConditions[0].PM2_5) + ")", LEFT);
+  drawString(col1ValueX + qualityOffset, pm10Y + 5, "(" + getPM10Quality(WxConditions[0].PM10) + ")", LEFT);
+  drawString(col1ValueX + qualityOffset, o3Y + 5, "(" + getO3Quality(WxConditions[0].O3) + ")", LEFT);
+  drawString(col2ValueX + qualityOffset, coY + 5, "(" + getCOQuality(WxConditions[0].CO) + ")", LEFT);
+  drawString(col2ValueX + qualityOffset, no2Y + 5, "(" + getNO2Quality(WxConditions[0].NO2) + ")", LEFT);
+  drawString(col2ValueX + qualityOffset, so2Y + 5, "(" + getSO2Quality(WxConditions[0].SO2) + ")", LEFT);
 
   // UV Index
   drawFastHLine(100, uvLineY, SCREEN_WIDTH - 200, Grey);

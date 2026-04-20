@@ -611,6 +611,73 @@ Shows actual historical data recorded by the device.
 
 **Access**: Touch the **AQI** zone in Current Conditions screen.
 
+```
++-----------------------------------------------+
+|  [Date]  @ [Time]                             |
++-----------------------------------------------+
+|              AIR QUALITY                      |
++-----------------------------------------------+
+|                                               |
+|           AQI: 2 - Fair                       |
+|   1=Good 2=Fair 3=Moderate 4=Poor 5=Very Poor |
+|                                               |
++-----------------------------------------------+
+|                                               |
+|   PM2.5: 12.5 ug/m3      CO: 234.5 ug/m3      |
+|   PM10:  25.3 ug/m3      NO2: 15.2 ug/m3      |
+|   O3:    45.6 ug/m3      SO2: 8.3 ug/m3       |
+|                                               |
++-----------------------------------------------+
+|           UV Index: 5.2 Moderate              |
++-----------------------------------------------+
+|             Touch to return                   |
++-----------------------------------------------+
+```
+
+#### Air Quality Index (AQI)
+
+| Value | Description | Recommendation |
+|-------|-------------|----------------|
+| 1 | Good | No restrictions |
+| 2 | Fair | Sensitive groups may have discomfort |
+| 3 | Moderate | Limit outdoor activity |
+| 4 | Poor | Avoid outdoor activity |
+| 5 | Very Poor | Stay indoors |
+
+#### Measured Pollutants
+
+| Pollutant | Description |
+|-----------|-------------|
+| PM2.5 | Fine particles (< 2.5 micrometers) |
+| PM10 | Coarse particles (< 10 micrometers) |
+| O3 | Tropospheric ozone |
+| CO | Carbon monoxide |
+| NO2 | Nitrogen dioxide |
+| SO2 | Sulfur dioxide |
+
+#### Pollutant Quality Ranges (ug/m3)
+
+| Pollutant | Good | Moderate | Poor | Very Poor |
+|-----------|------|----------|------|-----------|
+| PM2.5 | 0-12 | 12-35 | 35-55 | >55 |
+| PM10 | 0-54 | 54-154 | 154-254 | >254 |
+| O3 | 0-100 | 100-160 | 160-215 | >215 |
+| CO | 0-4400 | 4400-9400 | 9400-12400 | >12400 |
+| NO2 | 0-40 | 40-100 | 100-200 | >200 |
+| SO2 | 0-40 | 40-80 | 80-380 | >380 |
+
+*Based on EPA (US Environmental Protection Agency) standards*
+
+#### UV Index
+
+| Range | Level | Recommended protection |
+|-------|-------|------------------------|
+| 0-2 | Low | No protection required |
+| 3-5 | Moderate | Use sunscreen |
+| 6-7 | High | Sunscreen + hat |
+| 8-10 | Very High | Avoid direct exposure |
+| 11+ | Extreme | Stay indoors |
+
 ---
 
 ## 8. WeatherAPI API

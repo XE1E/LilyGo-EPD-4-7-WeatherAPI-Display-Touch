@@ -1045,6 +1045,19 @@ El sistema utiliza almacenamiento dual con fallback automatico:
 | NO2 | Dioxido de nitrogeno |
 | SO2 | Dioxido de azufre |
 
+#### Rangos de Calidad por Contaminante (ug/m3)
+
+| Contaminante | Bueno | Moderado | Malo | Muy Malo |
+|--------------|-------|----------|------|----------|
+| PM2.5 | 0-12 | 12-35 | 35-55 | >55 |
+| PM10 | 0-54 | 54-154 | 154-254 | >254 |
+| O3 | 0-100 | 100-160 | 160-215 | >215 |
+| CO | 0-4400 | 4400-9400 | 9400-12400 | >12400 |
+| NO2 | 0-40 | 40-100 | 100-200 | >200 |
+| SO2 | 0-40 | 40-80 | 80-380 | >380 |
+
+*Basado en estandares EPA (US Environmental Protection Agency)*
+
 #### Indice UV
 
 | Rango | Nivel | Proteccion recomendada |
