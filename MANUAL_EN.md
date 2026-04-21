@@ -611,38 +611,62 @@ Shows actual historical data recorded by the device.
 
 **Access**: Touch the **AQI** zone in Current Conditions screen.
 
+This screen displays 6 vertical bar graphs, one for each pollutant, allowing quick visual comparison of air quality levels.
+
 ```
-+-----------------------------------------------+
-|  [Date]  @ [Time]                             |
-+-----------------------------------------------+
-|              AIR QUALITY                      |
-+-----------------------------------------------+
-|                                               |
-|           AQI: 2 - Fair                       |
-|   1=Good 2=Fair 3=Moderate 4=Poor 5=Very Poor |
-|                                               |
-+-----------------------------------------------+
-|                                               |
-|   PM2.5: 12.5 ug/m3      CO: 234.5 ug/m3      |
-|   PM10:  25.3 ug/m3      NO2: 15.2 ug/m3      |
-|   O3:    45.6 ug/m3      SO2: 8.3 ug/m3       |
-|                                               |
-+-----------------------------------------------+
-|           UV Index: 5.2 Moderate              |
-+-----------------------------------------------+
-|             Touch to return                   |
-+-----------------------------------------------+
++---------------------------------------------------------------+
+|  [Date]  @ [Time]                                             |
++---------------------------------------------------------------+
+|                       AIR QUALITY                             |
++---------+---------+---------+---------+---------+---------+---+
+|         |         |         |         |         |         |   |
+| PM2.5   | PM10    | O3      | CO      | NO2     | SO2     |   |
+|  ____   |  ____   |  ____   |  ____   |  ____   |  ____   |   |
+| |    |  | |    |  | |    |  | |    |  | |    |  | |    |  |   |
+| |####|  | |##  |  | |### |  | |#   |  | |##  |  | |#   |  |   |
+| |####|  | |##  |  | |### |  | |#   |  | |##  |  | |#   |  |   |
+| |####|  | |##  |  | |### |  | |#   |  | |##  |  | |#   |  |   |
+| |____|  | |____|  | |____|  | |____|  | |____|  | |____|  |   |
+|  12.5   |  25.3   |  45.6   | 234.5   |  15.2   |   8.3   |   |
+| ug/m3   | ug/m3   | ug/m3   | ug/m3   | ug/m3   | ug/m3   |   |
+|  GOOD   |  FAIR   |MODERATE |  GOOD   |  FAIR   |  GOOD   |   |
++---------+---------+---------+---------+---------+---------+---+
+|                                                               |
+|         AQI :  2 - FAIR              UV :  5.2 - MODERATE     |
++---------------------------------------------------------------+
 ```
+
+#### Graph Elements
+
+- **Title**: Pollutant name (PM2.5, PM10, O3, CO, NO2, SO2)
+- **Left scale**: Numeric scale with divisions and tick marks
+  - Major ticks (with numbers): longer with gray dotted line across bar
+  - Minor ticks: shorter
+- **Bar**: Dark gray fill proportional to current value
+- **Value**: Current reading in large font
+- **Unit**: ug/m3 (micrograms per cubic meter)
+- **Quality**: Classification in UPPERCASE (GOOD, FAIR, MODERATE, POOR, VERY POOR)
+
+#### Pollutant Scales
+
+| Pollutant | Scale | Type |
+|-----------|-------|------|
+| PM2.5 | 0-100 | Fixed |
+| PM10 | 0-300 | Fixed |
+| O3 | 0-250 | Fixed |
+| CO | Dynamic | Adjusts to current value |
+| NO2 | 0-300 | Fixed |
+| SO2 | 0-1000 | Fixed |
 
 #### Air Quality Index (AQI)
 
 | Value | Description | Recommendation |
 |-------|-------------|----------------|
-| 1 | Good | No restrictions |
-| 2 | Fair | Sensitive groups may have discomfort |
-| 3 | Moderate | Limit outdoor activity |
-| 4 | Poor | Avoid outdoor activity |
-| 5 | Very Poor | Stay indoors |
+| 1 | GOOD | No restrictions |
+| 2 | FAIR | Sensitive groups may have discomfort |
+| 3 | MODERATE | Limit outdoor activity |
+| 4 | POOR | Avoid outdoor activity |
+| 5 | VERY POOR | Stay indoors |
 
 #### Measured Pollutants
 
@@ -657,26 +681,28 @@ Shows actual historical data recorded by the device.
 
 #### Pollutant Quality Ranges (ug/m3)
 
-| Pollutant | Good | Moderate | Poor | Very Poor |
-|-----------|------|----------|------|-----------|
-| PM2.5 | 0-12 | 12-35 | 35-55 | >55 |
-| PM10 | 0-54 | 54-154 | 154-254 | >254 |
-| O3 | 0-100 | 100-160 | 160-215 | >215 |
-| CO | 0-4400 | 4400-9400 | 9400-12400 | >12400 |
-| NO2 | 0-40 | 40-100 | 100-200 | >200 |
-| SO2 | 0-40 | 40-80 | 80-380 | >380 |
+| Pollutant | Good | Fair | Moderate | Poor | Very Poor |
+|-----------|------|------|----------|------|-----------|
+| PM2.5 | 0-10 | 10-25 | 25-50 | 50-75 | >75 |
+| PM10 | 0-20 | 20-50 | 50-100 | 100-200 | >200 |
+| O3 | 0-60 | 60-100 | 100-140 | 140-180 | >180 |
+| CO | 0-4400 | 4400-9400 | 9400-12400 | 12400-15400 | >15400 |
+| NO2 | 0-40 | 40-90 | 90-120 | 120-230 | >230 |
+| SO2 | 0-40 | 40-80 | 80-380 | 380-800 | >800 |
 
-*Based on EPA (US Environmental Protection Agency) standards*
+*Based on EPA and WHO standards*
 
 #### UV Index
 
+Displayed alongside AQI at the bottom of the screen.
+
 | Range | Level | Recommended protection |
 |-------|-------|------------------------|
-| 0-2 | Low | No protection required |
-| 3-5 | Moderate | Use sunscreen |
-| 6-7 | High | Sunscreen + hat |
-| 8-10 | Very High | Avoid direct exposure |
-| 11+ | Extreme | Stay indoors |
+| 0-2 | LOW | No protection required |
+| 3-5 | MODERATE | Use sunscreen |
+| 6-7 | HIGH | Sunscreen + hat |
+| 8-10 | VERY HIGH | Avoid direct exposure |
+| 11+ | EXTREME | Stay indoors |
 
 ---
 

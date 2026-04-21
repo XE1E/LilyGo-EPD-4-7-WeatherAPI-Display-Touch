@@ -611,38 +611,62 @@ Affiche les donnees historiques reelles enregistrees par l'appareil.
 
 **Acces**: Toucher la zone **IQA** dans l'ecran Conditions Actuelles.
 
+Cet ecran affiche 6 graphiques a barres verticales, un pour chaque polluant, permettant une comparaison visuelle rapide de la qualite de l'air.
+
 ```
-+-----------------------------------------------+
-|  [Date]  @ [Heure]                            |
-+-----------------------------------------------+
-|            QUALITE DE L'AIR                   |
-+-----------------------------------------------+
-|                                               |
-|           IQA: 2 - Acceptable                 |
-|   1=Bon 2=Acceptable 3=Modere 4=Mauvais 5=Tres Mauvais |
-|                                               |
-+-----------------------------------------------+
-|                                               |
-|   PM2.5: 12.5 ug/m3      CO: 234.5 ug/m3      |
-|   PM10:  25.3 ug/m3      NO2: 15.2 ug/m3      |
-|   O3:    45.6 ug/m3      SO2: 8.3 ug/m3       |
-|                                               |
-+-----------------------------------------------+
-|           Indice UV: 5.2 Modere               |
-+-----------------------------------------------+
-|           Toucher pour revenir                |
-+-----------------------------------------------+
++---------------------------------------------------------------+
+|  [Date]  @ [Heure]                                            |
++---------------------------------------------------------------+
+|                     QUALITE DE L'AIR                          |
++---------+---------+---------+---------+---------+---------+---+
+|         |         |         |         |         |         |   |
+| PM2.5   | PM10    | O3      | CO      | NO2     | SO2     |   |
+|  ____   |  ____   |  ____   |  ____   |  ____   |  ____   |   |
+| |    |  | |    |  | |    |  | |    |  | |    |  | |    |  |   |
+| |####|  | |##  |  | |### |  | |#   |  | |##  |  | |#   |  |   |
+| |####|  | |##  |  | |### |  | |#   |  | |##  |  | |#   |  |   |
+| |####|  | |##  |  | |### |  | |#   |  | |##  |  | |#   |  |   |
+| |____|  | |____|  | |____|  | |____|  | |____|  | |____|  |   |
+|  12.5   |  25.3   |  45.6   | 234.5   |  15.2   |   8.3   |   |
+| ug/m3   | ug/m3   | ug/m3   | ug/m3   | ug/m3   | ug/m3   |   |
+|  BON    |ACCEPTABLE| MODERE |  BON    |ACCEPTABLE|  BON   |   |
++---------+---------+---------+---------+---------+---------+---+
+|                                                               |
+|       IQA :  2 - ACCEPTABLE          UV :  5.2 - MODERE       |
++---------------------------------------------------------------+
 ```
+
+#### Elements des graphiques
+
+- **Titre**: Nom du polluant (PM2.5, PM10, O3, CO, NO2, SO2)
+- **Echelle gauche**: Echelle numerique avec divisions et graduations
+  - Graduations principales (avec numeros): plus longues avec ligne pointillee grise
+  - Graduations intermediaires: plus courtes
+- **Barre**: Remplissage gris fonce proportionnel a la valeur actuelle
+- **Valeur**: Lecture actuelle en grande police
+- **Unite**: ug/m3 (microgrammes par metre cube)
+- **Qualite**: Classification en MAJUSCULES (BON, ACCEPTABLE, MODERE, MAUVAIS, TRES MAUVAIS)
+
+#### Echelles par Polluant
+
+| Polluant | Echelle | Type |
+|----------|---------|------|
+| PM2.5 | 0-100 | Fixe |
+| PM10 | 0-300 | Fixe |
+| O3 | 0-250 | Fixe |
+| CO | Dynamique | S'ajuste a la valeur actuelle |
+| NO2 | 0-300 | Fixe |
+| SO2 | 0-1000 | Fixe |
 
 #### Indice de Qualite de l'Air (IQA)
 
 | Valeur | Description | Recommandation |
 |--------|-------------|----------------|
-| 1 | Bon | Aucune restriction |
-| 2 | Acceptable | Les groupes sensibles peuvent ressentir un inconfort |
-| 3 | Modere | Limiter l'activite en plein air |
-| 4 | Mauvais | Eviter l'activite en plein air |
-| 5 | Tres Mauvais | Rester a l'interieur |
+| 1 | BON | Aucune restriction |
+| 2 | ACCEPTABLE | Les groupes sensibles peuvent ressentir un inconfort |
+| 3 | MODERE | Limiter l'activite en plein air |
+| 4 | MAUVAIS | Eviter l'activite en plein air |
+| 5 | TRES MAUVAIS | Rester a l'interieur |
 
 #### Polluants Mesures
 
@@ -657,26 +681,28 @@ Affiche les donnees historiques reelles enregistrees par l'appareil.
 
 #### Plages de Qualite par Polluant (ug/m3)
 
-| Polluant | Bon | Modere | Mauvais | Tres Mauvais |
-|----------|-----|--------|---------|--------------|
-| PM2.5 | 0-12 | 12-35 | 35-55 | >55 |
-| PM10 | 0-54 | 54-154 | 154-254 | >254 |
-| O3 | 0-100 | 100-160 | 160-215 | >215 |
-| CO | 0-4400 | 4400-9400 | 9400-12400 | >12400 |
-| NO2 | 0-40 | 40-100 | 100-200 | >200 |
-| SO2 | 0-40 | 40-80 | 80-380 | >380 |
+| Polluant | Bon | Acceptable | Modere | Mauvais | Tres Mauvais |
+|----------|-----|------------|--------|---------|--------------|
+| PM2.5 | 0-10 | 10-25 | 25-50 | 50-75 | >75 |
+| PM10 | 0-20 | 20-50 | 50-100 | 100-200 | >200 |
+| O3 | 0-60 | 60-100 | 100-140 | 140-180 | >180 |
+| CO | 0-4400 | 4400-9400 | 9400-12400 | 12400-15400 | >15400 |
+| NO2 | 0-40 | 40-90 | 90-120 | 120-230 | >230 |
+| SO2 | 0-40 | 40-80 | 80-380 | 380-800 | >800 |
 
-*Base sur les normes EPA (Agence de Protection de l'Environnement des Etats-Unis)*
+*Base sur les normes EPA et OMS*
 
 #### Indice UV
 
+Affiche a cote de l'IQA en bas de l'ecran.
+
 | Plage | Niveau | Protection recommandee |
 |-------|--------|------------------------|
-| 0-2 | Faible | Aucune protection necessaire |
-| 3-5 | Modere | Utiliser un ecran solaire |
-| 6-7 | Eleve | Ecran solaire + chapeau |
-| 8-10 | Tres Eleve | Eviter l'exposition directe |
-| 11+ | Extreme | Rester a l'interieur |
+| 0-2 | FAIBLE | Aucune protection necessaire |
+| 3-5 | MODERE | Utiliser un ecran solaire |
+| 6-7 | ELEVE | Ecran solaire + chapeau |
+| 8-10 | TRES ELEVE | Eviter l'exposition directe |
+| 11+ | EXTREME | Rester a l'interieur |
 
 ---
 

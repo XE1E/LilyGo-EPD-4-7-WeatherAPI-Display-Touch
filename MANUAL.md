@@ -1001,38 +1001,62 @@ El sistema utiliza almacenamiento dual con fallback automatico:
 
 **Acceso**: Tocar la zona **ICA** en la pantalla de Condiciones Actuales.
 
+Esta pantalla muestra 6 graficas de barra verticales, una para cada contaminante, permitiendo una visualizacion rapida y comparativa de la calidad del aire.
+
 ```
-+-----------------------------------------------+
-|  [Fecha]  @ [Hora]                            |
-+-----------------------------------------------+
-|            CALIDAD DEL AIRE                   |
-+-----------------------------------------------+
-|                                               |
-|         ICA: 2 - Aceptable                    |
-|   1=Bueno 2=Aceptable 3=Moderado 4=Malo 5=Muy Malo |
-|                                               |
-+-----------------------------------------------+
-|                                               |
-|   PM2.5: 12.5 ug/m3      CO: 234.5 ug/m3      |
-|   PM10:  25.3 ug/m3      NO2: 15.2 ug/m3      |
-|   O3:    45.6 ug/m3      SO2: 8.3 ug/m3       |
-|                                               |
-+-----------------------------------------------+
-|           Indice UV: 5.2 Moderado             |
-+-----------------------------------------------+
-|           Toca para volver                    |
-+-----------------------------------------------+
++---------------------------------------------------------------+
+|  [Fecha]  @ [Hora]                                            |
++---------------------------------------------------------------+
+|                     CALIDAD DEL AIRE                          |
++---------+---------+---------+---------+---------+---------+---+
+|         |         |         |         |         |         |   |
+| PM2.5   | PM10    | O3      | CO      | NO2     | SO2     |   |
+|  ____   |  ____   |  ____   |  ____   |  ____   |  ____   |   |
+| |    |  | |    |  | |    |  | |    |  | |    |  | |    |  |   |
+| |####|  | |##  |  | |### |  | |#   |  | |##  |  | |#   |  |   |
+| |####|  | |##  |  | |### |  | |#   |  | |##  |  | |#   |  |   |
+| |####|  | |##  |  | |### |  | |#   |  | |##  |  | |#   |  |   |
+| |____|  | |____|  | |____|  | |____|  | |____|  | |____|  |   |
+|  12.5   |  25.3   |  45.6   | 234.5   |  15.2   |   8.3   |   |
+| ug/m3   | ug/m3   | ug/m3   | ug/m3   | ug/m3   | ug/m3   |   |
+| BUENO   |ACEPTABLE|MODERADO | BUENO   |ACEPTABLE| BUENO   |   |
++---------+---------+---------+---------+---------+---------+---+
+|                                                               |
+|       ICA :  2 - ACEPTABLE          UV :  5.2 - MODERADO      |
++---------------------------------------------------------------+
 ```
+
+#### Elementos de cada grafica
+
+- **Titulo**: Nombre del contaminante (PM2.5, PM10, O3, CO, NO2, SO2)
+- **Escala izquierda**: Escala numerica con divisiones y marcas de tick
+  - Marcas principales (numeros): mas largas con linea punteada gris
+  - Marcas intermedias: mas cortas
+- **Barra**: Relleno gris oscuro proporcional al valor actual
+- **Valor**: Lectura actual en grande
+- **Unidad**: ug/m3 (microgramos por metro cubico)
+- **Calidad**: Clasificacion en MAYUSCULAS (BUENO, ACEPTABLE, MODERADO, MALO, MUY MALO)
+
+#### Escalas por Contaminante
+
+| Contaminante | Escala | Tipo |
+|--------------|--------|------|
+| PM2.5 | 0-100 | Fija |
+| PM10 | 0-300 | Fija |
+| O3 | 0-250 | Fija |
+| CO | Dinamica | Se ajusta al valor actual |
+| NO2 | 0-300 | Fija |
+| SO2 | 0-1000 | Fija |
 
 #### Indice de Calidad del Aire (ICA)
 
 | Valor | Descripcion | Recomendacion |
 |-------|-------------|---------------|
-| 1 | Bueno | Sin restricciones |
-| 2 | Aceptable | Grupos sensibles pueden tener molestias |
-| 3 | Moderado | Limitar actividad al aire libre |
-| 4 | Malo | Evitar actividad al aire libre |
-| 5 | Muy Malo | Permanecer en interiores |
+| 1 | BUENO | Sin restricciones |
+| 2 | ACEPTABLE | Grupos sensibles pueden tener molestias |
+| 3 | MODERADO | Limitar actividad al aire libre |
+| 4 | MALO | Evitar actividad al aire libre |
+| 5 | MUY MALO | Permanecer en interiores |
 
 #### Contaminantes Medidos
 
@@ -1047,26 +1071,28 @@ El sistema utiliza almacenamiento dual con fallback automatico:
 
 #### Rangos de Calidad por Contaminante (ug/m3)
 
-| Contaminante | Bueno | Moderado | Malo | Muy Malo |
-|--------------|-------|----------|------|----------|
-| PM2.5 | 0-12 | 12-35 | 35-55 | >55 |
-| PM10 | 0-54 | 54-154 | 154-254 | >254 |
-| O3 | 0-100 | 100-160 | 160-215 | >215 |
-| CO | 0-4400 | 4400-9400 | 9400-12400 | >12400 |
-| NO2 | 0-40 | 40-100 | 100-200 | >200 |
-| SO2 | 0-40 | 40-80 | 80-380 | >380 |
+| Contaminante | Bueno | Aceptable | Moderado | Malo | Muy Malo |
+|--------------|-------|-----------|----------|------|----------|
+| PM2.5 | 0-10 | 10-25 | 25-50 | 50-75 | >75 |
+| PM10 | 0-20 | 20-50 | 50-100 | 100-200 | >200 |
+| O3 | 0-60 | 60-100 | 100-140 | 140-180 | >180 |
+| CO | 0-4400 | 4400-9400 | 9400-12400 | 12400-15400 | >15400 |
+| NO2 | 0-40 | 40-90 | 90-120 | 120-230 | >230 |
+| SO2 | 0-40 | 40-80 | 80-380 | 380-800 | >800 |
 
-*Basado en estandares EPA (US Environmental Protection Agency)*
+*Basado en estandares EPA y OMS*
 
 #### Indice UV
 
+Mostrado junto al ICA en la parte inferior de la pantalla.
+
 | Rango | Nivel | Proteccion recomendada |
 |-------|-------|------------------------|
-| 0-2 | Bajo | No requiere proteccion |
-| 3-5 | Moderado | Usar protector solar |
-| 6-7 | Alto | Protector + sombrero |
-| 8-10 | Muy Alto | Evitar exposicion directa |
-| 11+ | Extremo | Permanecer en interiores |
+| 0-2 | BAJO | No requiere proteccion |
+| 3-5 | MODERADO | Usar protector solar |
+| 6-7 | ALTO | Protector + sombrero |
+| 8-10 | MUY ALTO | Evitar exposicion directa |
+| 11+ | EXTREMO | Permanecer en interiores |
 
 ### 7.9 Timeout y Sleep
 
