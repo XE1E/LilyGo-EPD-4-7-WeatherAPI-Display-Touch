@@ -139,6 +139,7 @@ int apRetryCount = 0;
 
 
 //fonts
+#include "opensans6.h"
 #include "opensans8b.h"
 #include "opensans9b.h"
 #include "opensans10b.h"
@@ -1426,7 +1427,7 @@ void DisplayFeelsLike(int x, int y) {
     default: aqiDesc = "--";
   }
   String aqiText = TXT_AQI + ": " + String(WxConditions[0].AQI) + " - " + aqiDesc;
-  drawString(x + 275, y + 1, aqiText, LEFT);
+  drawString(x + 275, y - 1, aqiText, LEFT);
 }
 
 // Find first forecast index within 1 hour of current time
@@ -2828,159 +2829,228 @@ void DisplayCurrentDetailScreen() {
   DisplayStatusSection(600, 33, wifi_signal);
 }
 
+// Helper function to get quality level for each pollutant (5 levels)
+String getPollutantQuality(const char* pollutant, float value) {
+  if (strcmp(pollutant, "PM2.5") == 0) {
+    if (value <= 10) return TXT_AQI_GOOD;
+    if (value <= 25) return TXT_AQI_FAIR;
+    if (value <= 50) return TXT_AQI_MODERATE;
+    if (value <= 75) return TXT_AQI_POOR;
+    return TXT_AQI_VERY_POOR;
+  }
+  if (strcmp(pollutant, "PM10") == 0) {
+    if (value <= 20) return TXT_AQI_GOOD;
+    if (value <= 50) return TXT_AQI_FAIR;
+    if (value <= 100) return TXT_AQI_MODERATE;
+    if (value <= 200) return TXT_AQI_POOR;
+    return TXT_AQI_VERY_POOR;
+  }
+  if (strcmp(pollutant, "O3") == 0) {
+    if (value <= 60) return TXT_AQI_GOOD;
+    if (value <= 100) return TXT_AQI_FAIR;
+    if (value <= 140) return TXT_AQI_MODERATE;
+    if (value <= 180) return TXT_AQI_POOR;
+    return TXT_AQI_VERY_POOR;
+  }
+  if (strcmp(pollutant, "CO") == 0) {
+    if (value <= 4400) return TXT_AQI_GOOD;
+    if (value <= 9400) return TXT_AQI_FAIR;
+    if (value <= 12400) return TXT_AQI_MODERATE;
+    if (value <= 15400) return TXT_AQI_POOR;
+    return TXT_AQI_VERY_POOR;
+  }
+  if (strcmp(pollutant, "NO2") == 0) {
+    if (value <= 40) return TXT_AQI_GOOD;
+    if (value <= 90) return TXT_AQI_FAIR;
+    if (value <= 120) return TXT_AQI_MODERATE;
+    if (value <= 230) return TXT_AQI_POOR;
+    return TXT_AQI_VERY_POOR;
+  }
+  if (strcmp(pollutant, "SO2") == 0) {
+    if (value <= 40) return TXT_AQI_GOOD;
+    if (value <= 80) return TXT_AQI_FAIR;
+    if (value <= 380) return TXT_AQI_MODERATE;
+    if (value <= 800) return TXT_AQI_POOR;
+    return TXT_AQI_VERY_POOR;
+  }
+  return "--";
+}
+
+// Helper function to get max scale for each pollutant
+// Fixed scale for all except CO (which uses dynamic scale)
+float getPollutantMaxScale(const char* pollutant, float value) {
+  // Fixed scales based on max possible values
+  if (strcmp(pollutant, "PM2.5") == 0) return 100;
+  if (strcmp(pollutant, "PM10") == 0) return 300;
+  if (strcmp(pollutant, "O3") == 0) return 250;
+  if (strcmp(pollutant, "NO2") == 0) return 300;
+  if (strcmp(pollutant, "SO2") == 0) return 1000;
+
+  // CO uses dynamic scale
+  if (strcmp(pollutant, "CO") == 0) {
+    float standardMax = 20000;
+    float maxVal;
+    if (value < standardMax * 0.2) {
+      maxVal = value * 5;
+      if (maxVal < 100) maxVal = 100;
+    } else if (value > standardMax * 0.9) {
+      maxVal = value * 1.2;
+    } else {
+      maxVal = standardMax;
+    }
+    return maxVal;
+  }
+
+  return 100;
+}
+
+// Draw a single air quality bar graph (compact for 6 columns)
+void drawAirQualityBar(int x, int y, const char* name, float value, const char* unit) {
+  // Dimensions - 40px wider bars
+  int barWidth = 70;
+  int barHeight = 220;
+
+  // Get scale and quality
+  float maxScale = getPollutantMaxScale(name, value);
+  String quality = getPollutantQuality(name, value);
+
+  // Calculate bar fill height
+  float fillRatio = value / maxScale;
+  if (fillRatio > 1.0) fillRatio = 1.0;
+  int fillHeight = (int)(barHeight * fillRatio);
+
+  // Draw title (name) - larger font
+  setFont(OpenSans12B);
+  drawString(x + 40, y, name, CENTER);
+
+  // Frame position (offset right to leave space for scale on left)
+  int frameX = x;
+  int frameY = y + 22;
+
+  // Draw scale on left side (10 divisions for more lines) with tick marks
+  setFont(OpenSans8B);
+  int scaleX = frameX - 5;
+  int numDivisions = 10;
+  for (int i = 0; i <= numDivisions; i++) {
+    int scaleY = frameY + 5 + (barHeight * i / numDivisions);
+    float scaleVal = maxScale * (numDivisions - i) / numDivisions;
+
+    // Major ticks (with numbers) - longer, with dotted line across graph
+    if (i % 2 == 0) {
+      drawFastHLine(frameX - 6, scaleY + 5, 8, Black);
+      // Dotted line across the bar area (gray)
+      if (i > 0 && i < numDivisions) {
+        for (int dx = 0; dx < barWidth; dx += 4) {
+          drawPixel(frameX + 5 + dx, scaleY + 5, Grey);
+          drawPixel(frameX + 6 + dx, scaleY + 5, Grey);
+        }
+      }
+      String scaleStr;
+      if (maxScale >= 1000) {
+        scaleStr = String((int)scaleVal);
+      } else if (maxScale >= 100) {
+        scaleStr = String((int)scaleVal);
+      } else {
+        scaleStr = String(scaleVal, 0);
+      }
+      drawString(scaleX, scaleY + 4, scaleStr, RIGHT);
+    } else {
+      // Minor ticks - shorter, same color and thickness
+      drawFastHLine(frameX - 3, scaleY + 5, 5, Black);
+    }
+  }
+
+  // Draw frame (rectangle)
+  drawRect(frameX, frameY, barWidth + 10, barHeight + 10, Black);
+
+  // Draw bar fill (darker gray) from bottom
+  int barX = frameX + 5;
+  int barY = frameY + 5;
+  int fillStartY = barY + barHeight - fillHeight;
+  fillRect(barX, fillStartY, barWidth, fillHeight, DarkGrey);
+
+  // Draw value below bar (larger font)
+  setFont(OpenSans12B);
+  int valueY = frameY + barHeight + 25;
+  String valueStr;
+  if (value >= 1000) {
+    valueStr = String((int)value);
+  } else if (value >= 100) {
+    valueStr = String(value, 0);
+  } else {
+    valueStr = String(value, 1);
+  }
+  drawString(x + 40, valueY, valueStr, CENTER);
+
+  // Draw unit below value
+  setFont(OpenSans8B);
+  drawString(x + 40, valueY + 18, unit, CENTER);
+
+  // Draw quality label below unit (larger font, uppercase, +10px separation)
+  setFont(OpenSans10B);
+  quality.toUpperCase();
+  drawString(x + 40, valueY + 48, quality, CENTER);
+}
+
 // Screen: Air Quality Details
 void DisplayAirQualityScreen() {
   drawScreenHeader();
 
   int centerX = SCREEN_WIDTH / 2;
 
-  // ===== ADJUSTABLE POSITIONS =====
-  // Title
-  int titleY = 50;
-  int titleLineY = 85;
+  // Title - moved up 20px
+  int titleY = 55;
+  int titleLineY = 90;
 
-  // Main AQI
-  int aqiY = 125;                   // AQI text
-  int aqiScaleY = 185;              // AQI scale
-  int aqiLineY = 210;               // Line below AQI
-
-  // Pollutants - Column 1 (PM2.5, PM10, O3)
-  int col1LabelX = 220;           // X position labels col1
-  int col1ValueX = 230;           // X position values col1
-
-  // Pollutants - Column 2 (CO, NO2, SO2)
-  int col2LabelX = 620;           // X position labels col2
-  int col2ValueX = 630;           // X position values col2
-
-  // Y rows for pollutants
-  int pm25Y = 245;
-  int pm10Y = 295;
-  int o3Y = 345;
-  int coY = 245;
-  int no2Y = 295;
-  int so2Y = 345;
-
-  int labelAdjustY = 10;            // Label vs value Y adjustment
-
-  // UV Index
-  int uvLineY = 400;
-  int uvLabelX = 380;
-  int uvValueX = 390;
-  int uvY = 440;
-
-  // ===== DRAW SCREEN =====
-
-  // Title
   setFont(OpenSans18B);
   drawString(centerX, titleY, TXT_AIR_QUALITY, CENTER);
   drawFastHLine(150, titleLineY, SCREEN_WIDTH - 300, Grey);
 
-  // Main AQI
-  setFont(OpenSans24B);
-  String aqiText, aqiDesc;
-  switch(WxConditions[0].AQI) {
-    case 1: aqiText = "1"; aqiDesc = TXT_AQI_GOOD; break;
-    case 2: aqiText = "2"; aqiDesc = TXT_AQI_FAIR; break;
-    case 3: aqiText = "3"; aqiDesc = TXT_AQI_MODERATE; break;
-    case 4: aqiText = "4"; aqiDesc = TXT_AQI_POOR; break;
-    case 5: aqiText = "5"; aqiDesc = TXT_AQI_VERY_POOR; break;
-    default: aqiText = "--"; aqiDesc = "--";
-  }
-  drawString(centerX, aqiY, TXT_AQI + ": " + aqiText + " - " + aqiDesc, CENTER);
+  // Layout: 6 columns in single row (wider bars) - moved 20px right
+  int colWidth = 150;
+  int startX = 75;  // Left margin for scale numbers (+20px)
+  int rowY = 120;
 
-  // AQI Scale
-  setFont(OpenSans8B);
-  String aqiScale = "1=" + TXT_AQI_GOOD + ", 2=" + TXT_AQI_FAIR + ", 3=" + TXT_AQI_MODERATE + ", 4=" + TXT_AQI_POOR + ", 5=" + TXT_AQI_VERY_POOR;
-  drawString(centerX, aqiScaleY, aqiScale, CENTER);
+  // All 6 pollutants in one row: PM2.5, PM10, O3, CO, NO2, SO2
+  drawAirQualityBar(startX + colWidth * 0, rowY, "PM2.5", WxConditions[0].PM2_5, "ug/m3");
+  drawAirQualityBar(startX + colWidth * 1, rowY, "PM10", WxConditions[0].PM10, "ug/m3");
+  drawAirQualityBar(startX + colWidth * 2, rowY, "O3", WxConditions[0].O3, "ug/m3");
+  drawAirQualityBar(startX + colWidth * 3, rowY, "CO", WxConditions[0].CO, "ug/m3");
+  drawAirQualityBar(startX + colWidth * 4, rowY, "NO2", WxConditions[0].NO2, "ug/m3");
+  drawAirQualityBar(startX + colWidth * 5, rowY, "SO2", WxConditions[0].SO2, "ug/m3");
 
-  drawFastHLine(100, aqiLineY, SCREEN_WIDTH - 200, Grey);
+  // Line below quality labels (moved up 10px)
+  int bottomLineY = 470;
+  drawFastHLine(100, bottomLineY, SCREEN_WIDTH - 200, Grey);
 
-  // Pollutant labels
-  setFont(OpenSans14B);
-  drawString(col1LabelX, pm25Y, "PM2.5:", RIGHT);
-  drawString(col1LabelX, pm10Y, "PM10:", RIGHT);
-  drawString(col1LabelX, o3Y, "O3 (" + TXT_OZONE + "):", RIGHT);
-  drawString(col2LabelX, coY, "CO:", RIGHT);
-  drawString(col2LabelX, no2Y, "NO2:", RIGHT);
-  drawString(col2LabelX, so2Y, "SO2:", RIGHT);
-
-  // Pollutant values with quality indicators
+  // ICA and UV below the line - larger font
   setFont(OpenSans16B);
-  // Helper lambdas for quality levels
-  auto getPM25Quality = [](float v) -> String {
-    if (v <= 12) return TXT_AQI_GOOD;
-    if (v <= 35) return TXT_AQI_MODERATE;
-    if (v <= 55) return TXT_AQI_POOR;
-    return TXT_AQI_VERY_POOR;
-  };
-  auto getPM10Quality = [](float v) -> String {
-    if (v <= 54) return TXT_AQI_GOOD;
-    if (v <= 154) return TXT_AQI_MODERATE;
-    if (v <= 254) return TXT_AQI_POOR;
-    return TXT_AQI_VERY_POOR;
-  };
-  auto getO3Quality = [](float v) -> String {
-    if (v <= 100) return TXT_AQI_GOOD;
-    if (v <= 160) return TXT_AQI_MODERATE;
-    if (v <= 215) return TXT_AQI_POOR;
-    return TXT_AQI_VERY_POOR;
-  };
-  auto getCOQuality = [](float v) -> String {
-    if (v <= 4400) return TXT_AQI_GOOD;
-    if (v <= 9400) return TXT_AQI_MODERATE;
-    if (v <= 12400) return TXT_AQI_POOR;
-    return TXT_AQI_VERY_POOR;
-  };
-  auto getNO2Quality = [](float v) -> String {
-    if (v <= 40) return TXT_AQI_GOOD;
-    if (v <= 100) return TXT_AQI_MODERATE;
-    if (v <= 200) return TXT_AQI_POOR;
-    return TXT_AQI_VERY_POOR;
-  };
-  auto getSO2Quality = [](float v) -> String {
-    if (v <= 40) return TXT_AQI_GOOD;
-    if (v <= 80) return TXT_AQI_MODERATE;
-    if (v <= 380) return TXT_AQI_POOR;
-    return TXT_AQI_VERY_POOR;
-  };
 
-  // Draw values
-  String pm25Val = String(WxConditions[0].PM2_5, 1) + " ug/m3";
-  String pm10Val = String(WxConditions[0].PM10, 1) + " ug/m3";
-  String o3Val = String(WxConditions[0].O3, 1) + " ug/m3";
-  String coVal = String(WxConditions[0].CO, 1) + " ug/m3";
-  String no2Val = String(WxConditions[0].NO2, 1) + " ug/m3";
-  String so2Val = String(WxConditions[0].SO2, 1) + " ug/m3";
+  // ICA (Air Quality Index) - uppercase with colon
+  String aqiDesc;
+  switch(WxConditions[0].AQI) {
+    case 1: aqiDesc = TXT_AQI_GOOD; break;
+    case 2: aqiDesc = TXT_AQI_FAIR; break;
+    case 3: aqiDesc = TXT_AQI_MODERATE; break;
+    case 4: aqiDesc = TXT_AQI_POOR; break;
+    case 5: aqiDesc = TXT_AQI_VERY_POOR; break;
+    default: aqiDesc = "--";
+  }
+  aqiDesc.toUpperCase();
+  String icaText = TXT_AQI + " :  " + String(WxConditions[0].AQI) + " - " + aqiDesc;
+  drawString(centerX - 175, bottomLineY + 15, icaText, CENTER);
 
-  drawString(col1ValueX, pm25Y, pm25Val, LEFT);
-  drawString(col1ValueX, pm10Y, pm10Val, LEFT);
-  drawString(col1ValueX, o3Y, o3Val, LEFT);
-  drawString(col2ValueX, coY, coVal, LEFT);
-  drawString(col2ValueX, no2Y, no2Val, LEFT);
-  drawString(col2ValueX, so2Y, so2Val, LEFT);
-
-  // Draw quality labels in small font
-  setFont(OpenSans8B);
-  int qualityOffset = 195;  // Offset from value X position
-  drawString(col1ValueX + qualityOffset, pm25Y + 5, "(" + getPM25Quality(WxConditions[0].PM2_5) + ")", LEFT);
-  drawString(col1ValueX + qualityOffset, pm10Y + 5, "(" + getPM10Quality(WxConditions[0].PM10) + ")", LEFT);
-  drawString(col1ValueX + qualityOffset, o3Y + 5, "(" + getO3Quality(WxConditions[0].O3) + ")", LEFT);
-  drawString(col2ValueX + qualityOffset, coY + 5, "(" + getCOQuality(WxConditions[0].CO) + ")", LEFT);
-  drawString(col2ValueX + qualityOffset, no2Y + 5, "(" + getNO2Quality(WxConditions[0].NO2) + ")", LEFT);
-  drawString(col2ValueX + qualityOffset, so2Y + 5, "(" + getSO2Quality(WxConditions[0].SO2) + ")", LEFT);
-
-  // UV Index
-  drawFastHLine(100, uvLineY, SCREEN_WIDTH - 200, Grey);
-
-  setFont(OpenSans18B);
+  // UV Index - uppercase with colon (+30px separation)
   String uvLevel;
   float uv = WxConditions[0].UVIndex;
-  if (uv < 3) uvLevel = " " + TXT_UV_LOW;
-  else if (uv < 6) uvLevel = " " + TXT_UV_MODERATE;
-  else if (uv < 8) uvLevel = " " + TXT_UV_HIGH;
-  else if (uv < 11) uvLevel = " " + TXT_UV_VERY_HIGH;
-  else uvLevel = " " + TXT_UV_EXTREME;
-  drawString(centerX, uvY + 5, TXT_UV_INDEX + ": " + String(uv, 1) + uvLevel, CENTER);
+  if (uv < 3) uvLevel = TXT_UV_LOW;
+  else if (uv < 6) uvLevel = TXT_UV_MODERATE;
+  else if (uv < 8) uvLevel = TXT_UV_HIGH;
+  else if (uv < 11) uvLevel = TXT_UV_VERY_HIGH;
+  else uvLevel = TXT_UV_EXTREME;
+  uvLevel.toUpperCase();
+  String uvText = "UV :  " + String(uv, 1) + " - " + uvLevel;
+  drawString(centerX + 175, bottomLineY + 15, uvText, CENTER);
 }
 
 // Calendar screens moved to calendar.h
