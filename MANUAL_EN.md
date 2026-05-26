@@ -459,11 +459,22 @@ int daylightOffset_sec  = 3600;    // 1 hour DST
 
 ### 5.2 Web Portal Configuration (AP Mode)
 
-#### Accessing AP Mode
+#### AP Mode Types
 
-AP mode activates automatically when:
-- No configured WiFi networks are available
-- `FORCE_AP_MODE = true` is set in code
+The device has three AP mode types with different behaviors:
+
+| Mode | When it activates | Timeout | Behavior |
+|------|-------------------|---------|----------|
+| **Initial Setup** | First boot, no valid config | No limit | Waits until save |
+| **Recovery Mode** | WiFi connection fails | 5 minutes | Retries WiFi after |
+| **Forced Mode** | `FORCE_AP_MODE = true` | No limit | For maintenance |
+
+#### First Boot Detection
+
+The device automatically detects if it's the first time:
+- Checks if API key is saved in NVS
+- Detects placeholders like "YOUR_WEATHERAPI_KEY"
+- If no valid config, enters **Initial Setup**
 
 #### Connection Data
 | Parameter | Value |
@@ -474,18 +485,29 @@ AP mode activates automatically when:
 
 #### AP Mode Screen
 
-When AP mode is activated, the screen shows:
+The screen shows information based on the mode type:
 
+**Initial Setup:**
 ```
-    WiFi Setup Mode
+    Initial Setup
+    WiFi Configuration Mode
 
     Connect to WiFi network:
     WeatherStation-Setup
-
     Password: weather123
 
     Then open in browser:
     http://192.168.4.1
+
+    No time limit
+```
+
+**Recovery Mode:**
+```
+    Recovery Mode
+    Could not connect to WiFi
+    ...
+    Timeout: 5 min
 ```
 
 ### 5.3 Web Configuration Page
@@ -493,16 +515,20 @@ When AP mode is activated, the screen shows:
 The web page is organized in 4 tabs:
 
 #### Tab 1: WiFi
-- **Primary Network**: SSID and password
-- **Secondary Network**: SSID and password (optional)
-- **Tertiary Network**: SSID and password (optional)
+- **Primary Network**: SSID and password + **Test button**
+- **Secondary Network**: SSID and password + **Test button** (optional)
+- **Tertiary Network**: SSID and password + **Test button** (optional)
+
+**Test WiFi Button**: Scans available networks and verifies the network exists. Shows signal strength (RSSI) if found.
 
 #### Tab 2: Weather
-- **API Key**: WeatherAPI key
+- **API Key**: WeatherAPI key + **Test button**
 - **Forecast Days**: 3 days
 - **City**: Display name
 - **Latitude/Longitude**: Exact coordinates
 - **Hemisphere**: North or South (affects moon phases)
+
+**Test API Button**: Makes a real call to WeatherAPI to validate the key. Shows detected location if valid. Only works in normal mode (requires internet).
 
 #### Tab 3: Display
 - **Language**: Spanish, English, French
@@ -518,9 +544,25 @@ The web page is organized in 4 tabs:
 - **Start Hour (wake)**: Hour from which to update weather (0-23)
 - **End Hour (sleep)**: Hour from which to stop updating (0-23)
 - **Narrative Style**: AI-generated text style (see section 12.5.5)
-- **Save**: Only saves changes
-- **Save and Restart**: Saves and applies changes
+- **Save**: Saves and applies immediate changes
+- **Save and Restart**: Saves and restarts to apply all changes
 - **Factory Reset**: Erases all configuration
+
+#### Settings Application
+
+Changes are applied differently based on type:
+
+| Apply Immediately | Require Restart |
+|-------------------|-----------------|
+| Language | WiFi credentials |
+| Units (C/F) | API Keys |
+| Update interval | City/Coordinates |
+| Active hours | Timezone |
+| Narrative style | GMT/DST Offset |
+
+In **AP mode**: When saving, the device automatically restarts in 5 seconds.
+
+In **normal mode**: When saving, immediate changes are applied and shows what requires restart.
 
 ### 5.4 Common Timezones
 

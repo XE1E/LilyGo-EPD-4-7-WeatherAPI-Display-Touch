@@ -459,11 +459,22 @@ int daylightOffset_sec  = 0;       // Sin horario de verano
 
 ### 5.2 Configuracion por Portal Web (Modo AP)
 
-#### Acceso al Modo AP
+#### Tipos de Modo AP
 
-El modo AP se activa automaticamente cuando:
-- No hay redes WiFi configuradas disponibles
-- Se configura `FORCE_AP_MODE = true` en el codigo
+El dispositivo tiene tres tipos de modo AP con diferentes comportamientos:
+
+| Modo | Cuando se activa | Timeout | Comportamiento |
+|------|------------------|---------|----------------|
+| **Configuracion Inicial** | Primer encendido, sin config valida | Sin limite | Espera hasta guardar |
+| **Modo Recuperacion** | Falla conexion WiFi | 5 minutos | Reintenta WiFi despues |
+| **Modo Forzado** | `FORCE_AP_MODE = true` | Sin limite | Para mantenimiento |
+
+#### Deteccion de Primera Instalacion
+
+El dispositivo detecta automaticamente si es la primera vez:
+- Verifica si hay API key guardada en NVS
+- Detecta placeholders como "YOUR_WEATHERAPI_KEY"
+- Si no hay config valida, entra en **Configuracion Inicial**
 
 #### Datos de Conexion
 | Parametro | Valor |
@@ -474,18 +485,29 @@ El modo AP se activa automaticamente cuando:
 
 #### Pantalla Modo AP
 
-Cuando se activa el modo AP, la pantalla muestra:
+La pantalla muestra informacion segun el tipo de modo:
 
+**Configuracion Inicial:**
 ```
-    WiFi Setup Mode
+    Configuracion Inicial
+    Modo Configuracion WiFi
 
-    Connect to WiFi network:
+    Conectar a la red WiFi:
     WeatherStation-Setup
-
     Password: weather123
 
-    Then open in browser:
+    Luego abrir en navegador:
     http://192.168.4.1
+
+    Sin limite de tiempo
+```
+
+**Modo Recuperacion:**
+```
+    Modo Recuperacion
+    No se pudo conectar a WiFi
+    ...
+    Timeout: 5 min
 ```
 
 ### 5.3 Pagina de Configuracion Web
@@ -493,16 +515,20 @@ Cuando se activa el modo AP, la pantalla muestra:
 La pagina web esta organizada en 4 pestanas:
 
 #### Tab 1: WiFi
-- **Red Principal**: SSID y contrasena
-- **Red Secundaria**: SSID y contrasena (opcional)
-- **Red Terciaria**: SSID y contrasena (opcional)
+- **Red Principal**: SSID y contrasena + **boton Probar**
+- **Red Secundaria**: SSID y contrasena + **boton Probar** (opcional)
+- **Red Terciaria**: SSID y contrasena + **boton Probar** (opcional)
+
+**Boton Probar WiFi**: Escanea redes disponibles y verifica que la red existe. Muestra la intensidad de senal (RSSI) si la encuentra.
 
 #### Tab 2: Clima
-- **API Key**: Clave de WeatherAPI
+- **API Key**: Clave de WeatherAPI + **boton Probar**
 - **Dias de Pronostico**: 3 dias
 - **Ciudad**: Nombre para mostrar
 - **Latitud/Longitud**: Coordenadas exactas
 - **Hemisferio**: Norte o Sur (afecta fases lunares)
+
+**Boton Probar API**: Hace una llamada real a WeatherAPI para validar la clave. Muestra la ubicacion detectada si es valida. Solo funciona en modo normal (requiere internet).
 
 #### Tab 3: Display
 - **Idioma**: Espanol, English, Francais
@@ -518,9 +544,25 @@ La pagina web esta organizada en 4 pestanas:
 - **Hora de Inicio (despertar)**: Hora a partir de la cual actualiza el clima (0-23)
 - **Hora de Fin (dormir)**: Hora a partir de la cual deja de actualizar (0-23)
 - **Estilo de Narrativa**: Estilo del texto generado por IA (ver seccion 12.5.5)
-- **Guardar**: Solo guarda cambios
-- **Guardar y Reiniciar**: Guarda y aplica cambios
+- **Guardar**: Guarda y aplica cambios inmediatos
+- **Guardar y Reiniciar**: Guarda y reinicia para aplicar todos los cambios
 - **Restablecer Fabrica**: Borra toda la configuracion
+
+#### Aplicacion de Cambios
+
+Los cambios se aplican de forma diferente segun el tipo:
+
+| Aplican Inmediatamente | Requieren Reinicio |
+|------------------------|-------------------|
+| Idioma | Credenciales WiFi |
+| Unidades (C/F) | API Keys |
+| Intervalo de actualizacion | Ciudad/Coordenadas |
+| Horario de actividad | Zona horaria |
+| Estilo de narrativa | GMT/DST Offset |
+
+En **modo AP**: Al guardar, el dispositivo reinicia automaticamente en 5 segundos.
+
+En **modo normal**: Al guardar, se aplican los cambios inmediatos y se muestra que requiere reinicio.
 
 #### Comportamiento "Al dormir" (detalle)
 

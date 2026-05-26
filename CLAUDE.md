@@ -56,12 +56,28 @@ If WiFi fails or `FORCE_AP_MODE=true`, enters AP mode with captive portal for co
 ### Configuration Storage
 Web-configured values are stored in ESP32 preferences (NVS) namespace "weather" and override defaults in `owm_credentials.h`.
 
+### AP Mode Types
+- **AP_INITIAL_SETUP**: First boot, no valid config - no timeout, auto-reboot on save
+- **AP_RECOVERY**: WiFi connection failed - 5 min timeout, retries WiFi after
+- **AP_FORCED**: FORCE_AP_MODE=true - no timeout, for maintenance
+
+### First Boot Detection
+The device detects first boot by checking for placeholder values ("YOUR_WEATHERAPI_KEY") or empty config in NVS.
+
 ### WiFi Connection Logic
-1. Scans available networks
-2. Matches against stored config + hardcoded credentials
-3. Connects to network with strongest signal
-4. Falls back to AP mode ("WeatherStation-Setup") if no connection
-5. After 5 failed retries, enters permanent deep sleep (requires manual reset)
+1. Check if first boot (no valid config) → AP_INITIAL_SETUP mode
+2. Check FORCE_AP_MODE flag → AP_FORCED mode
+3. Scans available networks
+4. Matches against stored config + hardcoded credentials
+5. Connects to network with strongest signal
+6. Falls back to AP mode (AP_RECOVERY) if no connection
+7. After 5 failed retries, enters permanent deep sleep (requires manual reset)
+
+### Web Configuration Features
+- **Test WiFi**: Scans networks to verify SSID exists, shows signal strength
+- **Test API**: Validates WeatherAPI key with real API call (normal mode only)
+- **Immediate Settings**: Language, units, intervals apply without reboot
+- **Reboot Settings**: WiFi, API keys, location require reboot
 
 ### Display
 Display is 960x540 pixels. Shows main weather screen with touch navigation to 11+ screens. Updates based on configured interval then returns to deep sleep.

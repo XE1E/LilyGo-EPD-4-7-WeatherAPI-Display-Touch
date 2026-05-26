@@ -73,13 +73,22 @@ The device supports wireless firmware updates:
 
 ### 2. First Boot Configuration
 
-On first power-up (or when no WiFi available), the device enters configuration mode:
+On first power-up, the device automatically detects no configuration and enters **initial setup mode** (no timeout):
 
 1. Connect to WiFi network: `WeatherStation-Setup`
 2. Password: `weather123`
 3. Open browser: `http://192.168.4.1`
-4. Enter your settings (API keys, location, etc.)
-5. Click Save - device restarts and displays weather
+4. **Test WiFi** - Button to verify the network exists
+5. **Test API** - Button to validate your API key before saving
+6. Enter your settings (API keys, location, etc.)
+7. Click Save - device automatically restarts in 5 seconds
+
+**Configuration modes:**
+| Mode | When it occurs | Timeout |
+|------|----------------|---------|
+| Initial Setup | First boot, no config | No limit |
+| Recovery Mode | WiFi connection fails | 5 minutes |
+| Forced Mode | `FORCE_AP_MODE=true` | No limit |
 
 ### 3. Normal Operation
 
@@ -118,6 +127,16 @@ After configuration, the device:
 | Language | Interface language | ES / EN / FR |
 | Units | Metric or Imperial | M / I |
 | Narrative style | AI text style | Radio, Formal, Poetic... |
+
+### Settings Application
+
+| Applies immediately | Requires reboot |
+|--------------------|-----------------|
+| Language | WiFi credentials |
+| Units (C/F) | API Keys |
+| Update interval | Location/Coordinates |
+| Active hours | Timezone |
+| Narrative style | |
 
 ## API Keys
 

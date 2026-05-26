@@ -459,11 +459,22 @@ int daylightOffset_sec  = 3600;   // Heure d'ete
 
 ### 5.2 Configuration Portail Web (Mode AP)
 
-#### Acces au Mode AP
+#### Types de Mode AP
 
-Le mode AP s'active automatiquement quand:
-- Aucun reseau WiFi configure n'est disponible
-- `FORCE_AP_MODE = true` est defini dans le code
+L'appareil dispose de trois types de mode AP avec des comportements differents:
+
+| Mode | Quand il s'active | Delai | Comportement |
+|------|-------------------|-------|--------------|
+| **Configuration Initiale** | Premier demarrage, pas de config valide | Sans limite | Attend jusqu'a l'enregistrement |
+| **Mode Recuperation** | Echec connexion WiFi | 5 minutes | Reessaie WiFi apres |
+| **Mode Force** | `FORCE_AP_MODE = true` | Sans limite | Pour maintenance |
+
+#### Detection Premier Demarrage
+
+L'appareil detecte automatiquement si c'est la premiere fois:
+- Verifie si la cle API est enregistree dans NVS
+- Detecte les placeholders comme "YOUR_WEATHERAPI_KEY"
+- Si pas de config valide, entre en **Configuration Initiale**
 
 #### Donnees de Connexion
 | Parametre | Valeur |
@@ -474,18 +485,29 @@ Le mode AP s'active automatiquement quand:
 
 #### Ecran Mode AP
 
-Quand le mode AP est active, l'ecran affiche:
+L'ecran affiche des informations selon le type de mode:
 
+**Configuration Initiale:**
 ```
-    WiFi Setup Mode
+    Configuration Initiale
+    Mode Configuration WiFi
 
-    Connect to WiFi network:
+    Connectez-vous au reseau WiFi:
     WeatherStation-Setup
+    Mot de passe: weather123
 
-    Password: weather123
-
-    Then open in browser:
+    Puis ouvrir dans le navigateur:
     http://192.168.4.1
+
+    Pas de limite de temps
+```
+
+**Mode Recuperation:**
+```
+    Mode Recuperation
+    Impossible de se connecter au WiFi
+    ...
+    Delai: 5 min
 ```
 
 ### 5.3 Page de Configuration Web
@@ -493,16 +515,20 @@ Quand le mode AP est active, l'ecran affiche:
 La page web est organisee en 4 onglets:
 
 #### Onglet 1: WiFi
-- **Reseau Principal**: SSID et mot de passe
-- **Reseau Secondaire**: SSID et mot de passe (optionnel)
-- **Reseau Tertiaire**: SSID et mot de passe (optionnel)
+- **Reseau Principal**: SSID et mot de passe + **bouton Tester**
+- **Reseau Secondaire**: SSID et mot de passe + **bouton Tester** (optionnel)
+- **Reseau Tertiaire**: SSID et mot de passe + **bouton Tester** (optionnel)
+
+**Bouton Tester WiFi**: Scanne les reseaux disponibles et verifie que le reseau existe. Affiche l'intensite du signal (RSSI) si trouve.
 
 #### Onglet 2: Meteo
-- **Cle API**: Cle WeatherAPI
+- **Cle API**: Cle WeatherAPI + **bouton Tester**
 - **Jours de Prevision**: 3 jours
 - **Ville**: Nom a afficher
 - **Latitude/Longitude**: Coordonnees exactes
 - **Hemisphere**: Nord ou Sud (affecte phases lunaires)
+
+**Bouton Tester API**: Fait un appel reel a WeatherAPI pour valider la cle. Affiche l'emplacement detecte si valide. Ne fonctionne qu'en mode normal (necessite internet).
 
 #### Onglet 3: Affichage
 - **Langue**: Espagnol, Anglais, Francais
@@ -518,9 +544,25 @@ La page web est organisee en 4 onglets:
 - **Heure Debut (reveil)**: Heure a partir de laquelle mettre a jour (0-23)
 - **Heure Fin (veille)**: Heure a partir de laquelle arreter les mises a jour (0-23)
 - **Style Narratif**: Style du texte genere par IA (voir section 12.5.5)
-- **Enregistrer**: Enregistre uniquement les modifications
-- **Enregistrer et Redemarrer**: Enregistre et applique les modifications
+- **Enregistrer**: Enregistre et applique les modifications immediates
+- **Enregistrer et Redemarrer**: Enregistre et redemarre pour appliquer toutes les modifications
 - **Reinitialisation Usine**: Efface toute la configuration
+
+#### Application des Parametres
+
+Les modifications s'appliquent differemment selon le type:
+
+| S'appliquent Immediatement | Necessitent Redemarrage |
+|----------------------------|-------------------------|
+| Langue | Identifiants WiFi |
+| Unites (C/F) | Cles API |
+| Intervalle de mise a jour | Ville/Coordonnees |
+| Heures d'activite | Fuseau horaire |
+| Style de narrative | Decalage GMT/Heure d'ete |
+
+En **mode AP**: A l'enregistrement, l'appareil redemarre automatiquement en 5 secondes.
+
+En **mode normal**: A l'enregistrement, les modifications immediates sont appliquees et affiche ce qui necessite un redemarrage.
 
 ### 5.4 Fuseaux Horaires Courants
 

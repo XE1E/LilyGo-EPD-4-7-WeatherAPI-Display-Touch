@@ -73,13 +73,22 @@ L'appareil supporte les mises a jour sans fil:
 
 ### 2. Configuration Initiale
 
-Au premier demarrage (ou sans WiFi disponible), l'appareil entre en mode configuration:
+Au premier demarrage, l'appareil detecte automatiquement l'absence de configuration et entre en **mode configuration initiale** (sans limite de temps):
 
 1. Se connecter au reseau WiFi: `WeatherStation-Setup`
 2. Mot de passe: `weather123`
 3. Ouvrir navigateur: `http://192.168.4.1`
-4. Entrer vos parametres (cles API, emplacement, etc.)
-5. Cliquer Sauvegarder - l'appareil redemarre et affiche la meteo
+4. **Tester WiFi** - Bouton pour verifier que le reseau existe
+5. **Tester API** - Bouton pour valider votre cle API avant de sauvegarder
+6. Entrer vos parametres (cles API, emplacement, etc.)
+7. Cliquer Sauvegarder - l'appareil redemarre automatiquement en 5 secondes
+
+**Modes de configuration:**
+| Mode | Quand il se produit | Delai |
+|------|---------------------|-------|
+| Configuration Initiale | Premier demarrage, sans config | Sans limite |
+| Mode Recuperation | Echec connexion WiFi | 5 minutes |
+| Mode Force | `FORCE_AP_MODE=true` | Sans limite |
 
 ### 3. Fonctionnement Normal
 
@@ -118,6 +127,16 @@ Apres configuration, l'appareil:
 | Langue | Langue de l'interface | ES / EN / FR |
 | Unites | Metrique ou Imperial | M / I |
 | Style narrative | Style du texte IA | Radio, Formel, Poetique... |
+
+### Application des Parametres
+
+| S'applique immediatement | Necessite redemarrage |
+|--------------------------|----------------------|
+| Langue | Identifiants WiFi |
+| Unites (C/F) | Cles API |
+| Intervalle de mise a jour | Emplacement/Coordonnees |
+| Heures d'activite | Fuseau horaire |
+| Style de narrative | |
 
 ## Cles API
 
