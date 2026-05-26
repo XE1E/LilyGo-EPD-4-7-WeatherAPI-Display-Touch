@@ -414,6 +414,11 @@ Flashear desde el navegador sin instalar nada:
 - Navegador Chrome, Edge u Opera (requiere Web Serial API)
 - Cable USB conectado al dispositivo
 
+#### Descargar Firmware
+
+Los archivos .bin compilados estan disponibles en:
+`https://github.com/XE1E/LilyGo-EPD-4-7-WeatherAPI-Display-Touch/releases`
+
 ---
 
 ## 5. Configuracion
