@@ -369,6 +369,51 @@ Si la carga falla, entrar en modo bootloader:
 4. **Soltar** BOOT
 5. Intentar cargar nuevamente
 
+### 4.4 Actualizacion OTA (Over-The-Air)
+
+El firmware puede actualizarse de forma inalambrica sin necesidad de cable USB.
+
+#### Metodo 1: Web OTA (Recomendado)
+
+Actualizar desde el navegador mientras el dispositivo esta conectado a WiFi:
+
+1. Conectarse a la misma red WiFi que el dispositivo
+2. Abrir en el navegador: `http://[IP_DEL_DISPOSITIVO]/ota`
+3. Arrastrar el archivo `.bin` o hacer click para seleccionar
+4. Click en "Actualizar Firmware"
+5. Esperar a que complete (no desconectar durante el proceso)
+6. El dispositivo se reiniciara automaticamente
+
+**Nota**: La IP del dispositivo se muestra en la pantalla de Informacion del Sistema.
+
+#### Metodo 2: Arduino OTA
+
+Actualizar directamente desde Arduino IDE por WiFi:
+
+1. Asegurarse que el dispositivo y la PC estan en la misma red
+2. En Arduino IDE: `Herramientas` → `Puerto`
+3. Seleccionar "WeatherStation at [IP]" (aparece como puerto de red)
+4. Click en Upload como normalmente
+
+**Requisitos**:
+- Dispositivo encendido y conectado a WiFi
+- PC en la misma red local
+- Arduino IDE con soporte ESP32
+
+#### Metodo 3: Web Flasher (GitHub)
+
+Flashear desde el navegador sin instalar nada:
+
+1. Visitar: `https://xe1e.github.io/LilyGo-EPD-4-7-WeatherAPI-Display-Touch/`
+2. Conectar el dispositivo por USB
+3. Click en "Instalar Firmware"
+4. Seleccionar el puerto serial
+5. Esperar a que complete la instalacion
+
+**Requisitos**:
+- Navegador Chrome, Edge u Opera (requiere Web Serial API)
+- Cable USB conectado al dispositivo
+
 ---
 
 ## 5. Configuracion

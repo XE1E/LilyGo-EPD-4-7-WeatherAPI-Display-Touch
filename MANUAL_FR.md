@@ -369,6 +369,51 @@ Si le televersement echoue, entrer en mode bootloader:
 4. **Relacher** BOOT
 5. Reessayer le televersement
 
+### 4.4 Mises a Jour OTA (Over-The-Air)
+
+Le firmware peut etre mis a jour sans fil, sans cable USB.
+
+#### Methode 1: OTA Web (Recommande)
+
+Mettre a jour depuis le navigateur lorsque l'appareil est connecte au WiFi:
+
+1. Se connecter au meme reseau WiFi que l'appareil
+2. Ouvrir dans le navigateur: `http://[IP_DE_L_APPAREIL]/ota`
+3. Glisser le fichier `.bin` ou cliquer pour selectionner
+4. Cliquer sur "Mettre a jour le Firmware"
+5. Attendre la fin (ne pas deconnecter pendant le processus)
+6. L'appareil redemarrera automatiquement
+
+**Note**: L'IP de l'appareil est affichee sur l'ecran Informations Systeme.
+
+#### Methode 2: Arduino OTA
+
+Mettre a jour directement depuis Arduino IDE via WiFi:
+
+1. S'assurer que l'appareil et le PC sont sur le meme reseau
+2. Dans Arduino IDE: `Outils` → `Port`
+3. Selectionner "WeatherStation at [IP]" (apparait comme port reseau)
+4. Cliquer sur Televerser normalement
+
+**Prerequis**:
+- Appareil allume et connecte au WiFi
+- PC sur le meme reseau local
+- Arduino IDE avec support ESP32
+
+#### Methode 3: Flasheur Web (GitHub)
+
+Flasher depuis le navigateur sans rien installer:
+
+1. Visiter: `https://xe1e.github.io/LilyGo-EPD-4-7-WeatherAPI-Display-Touch/`
+2. Connecter l'appareil via USB
+3. Cliquer sur "Installer Firmware"
+4. Selectionner le port serie
+5. Attendre la fin de l'installation
+
+**Prerequis**:
+- Navigateur Chrome, Edge ou Opera (necessite Web Serial API)
+- Cable USB connecte a l'appareil
+
 ---
 
 ## 5. Configuration
