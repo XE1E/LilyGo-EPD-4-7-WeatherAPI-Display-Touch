@@ -1,42 +1,44 @@
-# LilyGo EPD 4.7" Weather Display - Touch Version
+# LilyGo EPD 4.7" Weather Display - Version Touch
 
 ![Weather Station Display](LilyGo-EPD-4-7-WeatherAPI-Display-Touch.jpeg)
 
-Weather station for LilyGo T5 4.7" e-paper display with full touch navigation.
+**[English](README_EN.md)** | **[Francais](README_FR.md)**
 
-## Features
+Estacion meteorologica para pantalla e-paper LilyGo T5 4.7" con navegacion tactil completa.
 
-- **Touch navigation** - 11+ screens navigable by touch
-- **Current weather** - Temperature, humidity, pressure, wind, UV Index, Air Quality
-- **3-day forecast** - Hourly and daily weather predictions
-- **Weather graphs** - Temperature, pressure, humidity, precipitation trends
-- **Data history** - Up to 1 year of recorded weather data (with SD card)
-- **Moon phase** - Current lunar phase with icon
-- **Sunrise/sunset** - Daily solar times
-- **Calendar** - Monthly and yearly views
-- **Weather narrative** - AI-generated weather descriptions in selected language (Groq/Llama)
-- **Quote of the day** - Daily inspirational quotes
-- **World clock** - Timezone map
-- **Web configuration** - Configure via WiFi AP, no recompilation needed
-- **Bluetooth configuration** - Android app for BLE setup
-- **Multi-language** - Spanish, English, French
-- **Multi-WiFi** - Connects to strongest available network from up to 3 configured
-- **Deep sleep** - Battery-friendly operation with configurable update interval
-- **SD card support** - Extended history storage (~52,000 readings)
+## Caracteristicas
+
+- **Navegacion tactil** - 11+ pantallas navegables por touch
+- **Clima actual** - Temperatura, humedad, presion, viento, Indice UV, Calidad del Aire
+- **Pronostico 3 dias** - Predicciones horarias y diarias
+- **Graficas del clima** - Tendencias de temperatura, presion, humedad, precipitacion
+- **Historial de datos** - Hasta 1 ano de datos grabados (con tarjeta SD)
+- **Fase lunar** - Fase lunar actual con icono
+- **Amanecer/atardecer** - Horarios solares diarios
+- **Calendario** - Vistas mensual y anual
+- **Narrativa del clima** - Descripciones generadas por IA en el idioma seleccionado (Groq/Llama)
+- **Frase del dia** - Citas inspiracionales diarias
+- **Reloj mundial** - Mapa de zonas horarias
+- **Configuracion web** - Configura via WiFi AP, sin recompilar
+- **Configuracion Bluetooth** - App Android para configuracion BLE
+- **Multi-idioma** - Espanol, Ingles, Frances
+- **Multi-WiFi** - Se conecta a la red mas fuerte de hasta 3 configuradas
+- **Deep sleep** - Operacion eficiente en bateria con intervalo configurable
+- **Soporte tarjeta SD** - Almacenamiento extendido de historial (~52,000 lecturas)
 
 ## Hardware
 
-**Required:** LilyGo T5 4.7" S3 Touch (ESP32-S3, 960x540 e-paper, GT911 touch)
+**Requerido:** LilyGo T5 4.7" S3 Touch (ESP32-S3, e-paper 960x540, touch GT911)
 
-Optional: MicroSD card for extended weather history
+Opcional: Tarjeta MicroSD para historial extendido
 
-## Quick Start
+## Inicio Rapido
 
-### 1. Upload Firmware
+### 1. Subir Firmware
 
-**Arduino IDE Settings:**
-| Setting | Value |
-|---------|-------|
+**Configuracion Arduino IDE:**
+| Configuracion | Valor |
+|---------------|-------|
 | Board | ESP32S3 Dev Module |
 | USB CDC On Boot | Enable |
 | USB DFU On Boot | Disable |
@@ -47,172 +49,172 @@ Optional: MicroSD card for extended weather history
 | Upload Mode | UART0/Hardware CDC |
 | USB Mode | Hardware CDC and JTAG |
 
-**Required Libraries:**
+**Librerias Requeridas:**
 - Board Manager: esp32 by Espressif Systems 2.0.17
 - EPD47-master: https://github.com/DFRobotdl/EPD47/archive/refs/heads/master.zip
 - ArduinoJson: by Benoit Blanchon 6.19.0
 
-**Alternative: Install via Web (no Arduino IDE needed)**
+**Alternativa: Instalar via Web (sin Arduino IDE)**
 
-[![Install Firmware](https://img.shields.io/badge/Install-Firmware-blue?style=for-the-badge)](https://xe1e.github.io/LilyGo-EPD-4-7-WeatherAPI-Display-Touch/)
+[![Instalar Firmware](https://img.shields.io/badge/Instalar-Firmware-blue?style=for-the-badge)](https://xe1e.github.io/LilyGo-EPD-4-7-WeatherAPI-Display-Touch/)
 
-Use Chrome, Edge or Opera browser and connect device via USB.
+Usar navegador Chrome, Edge u Opera y conectar dispositivo via USB.
 
-### Firmware Updates (OTA)
+### Actualizaciones de Firmware (OTA)
 
-The device supports wireless firmware updates:
+El dispositivo soporta actualizaciones inalambricas:
 
-| Method | URL / How to use |
-|--------|------------------|
-| **Web OTA** | `http://[DEVICE_IP]/ota` - Upload .bin from browser |
-| **Arduino OTA** | Select "WeatherStation" network port in Arduino IDE |
+| Metodo | URL / Como usar |
+|--------|-----------------|
+| **Web OTA** | `http://[IP_DISPOSITIVO]/ota` - Subir .bin desde navegador |
+| **Arduino OTA** | Seleccionar puerto de red "WeatherStation" en Arduino IDE |
 | **Web Flasher** | [xe1e.github.io/LilyGo-EPD-4-7-WeatherAPI-Display-Touch](https://xe1e.github.io/LilyGo-EPD-4-7-WeatherAPI-Display-Touch/) |
-| **Releases** | [Download .bin files](https://github.com/XE1E/LilyGo-EPD-4-7-WeatherAPI-Display-Touch/releases) |
+| **Releases** | [Descargar archivos .bin](https://github.com/XE1E/LilyGo-EPD-4-7-WeatherAPI-Display-Touch/releases) |
 
-### 2. First Boot Configuration
+### 2. Configuracion Inicial
 
-On first power-up (or when no WiFi available), the device enters configuration mode:
+En el primer encendido (o cuando no hay WiFi disponible), el dispositivo entra en modo configuracion:
 
-1. Connect to WiFi network: `WeatherStation-Setup`
+1. Conectarse a red WiFi: `WeatherStation-Setup`
 2. Password: `weather123`
-3. Open browser: `http://192.168.4.1`
-4. Enter your settings (API keys, location, etc.)
-5. Click Save - device restarts and displays weather
+3. Abrir navegador: `http://192.168.4.1`
+4. Ingresar configuracion (API keys, ubicacion, etc.)
+5. Click en Guardar - el dispositivo reinicia y muestra el clima
 
-### 3. Normal Operation
+### 3. Operacion Normal
 
-After configuration, the device:
-1. Connects to WiFi
-2. Fetches weather from WeatherAPI.com (single HTTPS call)
-3. Displays weather on screen
-4. Allows 30 seconds of touch navigation
-5. Enters deep sleep (configurable interval)
-6. Wakes up and repeats
+Despues de configurar, el dispositivo:
+1. Se conecta a WiFi
+2. Obtiene clima de WeatherAPI.com (una sola llamada HTTPS)
+3. Muestra el clima en pantalla
+4. Permite 30 segundos de navegacion tactil
+5. Entra en deep sleep (intervalo configurable)
+6. Despierta y repite
 
-## Touch Navigation
+## Navegacion Tactil
 
-| Screen Zone | Action |
-|-------------|--------|
-| Large weather icon (center) | Weather Narrative (AI) |
-| Battery/WiFi area (top-right) | System Info |
-| Moon/Sun area (top-left) | Calendar |
-| Temperature/Weather (upper) | Current Conditions |
-| Hourly forecast (middle) | Extended Forecast |
-| Graphs left half | Weather History |
-| Graphs right half | Forecast Trends |
+| Zona de Pantalla | Accion |
+|------------------|--------|
+| Icono grande del clima (centro) | Narrativa del Clima (IA) |
+| Area bateria/WiFi (arriba-derecha) | Info del Sistema |
+| Area luna/sol (arriba-izquierda) | Calendario |
+| Temperatura/Clima (superior) | Condiciones Actuales |
+| Pronostico por hora (medio) | Pronostico Extendido |
+| Mitad izquierda graficas | Historial del Clima |
+| Mitad derecha graficas | Tendencias del Pronostico |
 
-## Configuration Options
+## Opciones de Configuracion
 
-| Field | Description | Example |
+| Campo | Descripcion | Ejemplo |
 |-------|-------------|---------|
-| WiFi (up to 3) | Network SSID and password | MyWiFi / password123 |
-| WeatherAPI Key | WeatherAPI.com API key | abc123... |
-| Groq API Key | For AI narrative (free) | gsk_... |
-| City | City name for display | Mexico City |
-| Latitude | Location latitude | 19.4326 |
-| Longitude | Location longitude | -99.1332 |
-| Timezone | POSIX timezone string | CST6 |
-| Update interval | Minutes between updates | 30 |
-| Language | Interface language | ES / EN / FR |
-| Units | Metric or Imperial | M / I |
-| Narrative style | AI text style | Radio, Formal, Poetic... |
+| WiFi (hasta 3) | SSID y password de red | MiWiFi / password123 |
+| WeatherAPI Key | API key de WeatherAPI.com | abc123... |
+| Groq API Key | Para narrativa IA (gratis) | gsk_... |
+| Ciudad | Nombre de ciudad para mostrar | Ciudad de Mexico |
+| Latitud | Latitud de ubicacion | 19.4326 |
+| Longitud | Longitud de ubicacion | -99.1332 |
+| Zona Horaria | String POSIX de zona horaria | CST6 |
+| Intervalo | Minutos entre actualizaciones | 30 |
+| Idioma | Idioma de interfaz | ES / EN / FR |
+| Unidades | Metrico o Imperial | M / I |
+| Estilo narrativa | Estilo de texto IA | Radio, Formal, Poetico... |
 
 ## API Keys
 
-### WeatherAPI.com (required)
-1. Sign up at https://www.weatherapi.com/
-2. Go to Dashboard
-3. Copy your API key
+### WeatherAPI.com (requerido)
+1. Registrarse en https://www.weatherapi.com/
+2. Ir al Dashboard
+3. Copiar tu API key
 
-### Groq (optional, for Weather Narrative)
-1. Sign up at https://console.groq.com/
-2. Create an API key
-3. Free tier: 30 requests/minute
+### Groq (opcional, para Narrativa del Clima)
+1. Registrarse en https://console.groq.com/
+2. Crear una API key
+3. Tier gratuito: 30 solicitudes/minuto
 
-## Screens
+## Pantallas
 
-| # | Screen | Access |
-|---|--------|--------|
-| 1 | Main Weather | Default |
-| 2 | Current Conditions | Touch upper area |
-| 3 | Extended Forecast | Touch hourly icons |
-| 4 | Weather Trends | Touch right graphs |
-| 5 | Weather History | Touch left graphs |
-| 6 | System Info (5 pages) | Touch battery/WiFi |
-| 7 | Air Quality | From Current Conditions |
-| 8 | Calendar (Monthly/Yearly) | Touch moon/sun area |
-| 9 | Weather Narrative | Touch large icon |
-| 10 | Quote of the Day | Hidden: Info > Credits > ... |
-| 11 | World Clock | Hidden navigation |
+| # | Pantalla | Acceso |
+|---|----------|--------|
+| 1 | Clima Principal | Por defecto |
+| 2 | Condiciones Actuales | Tocar area superior |
+| 3 | Pronostico Extendido | Tocar iconos por hora |
+| 4 | Tendencias del Clima | Tocar graficas derecha |
+| 5 | Historial del Clima | Tocar graficas izquierda |
+| 6 | Info del Sistema (5 paginas) | Tocar bateria/WiFi |
+| 7 | Calidad del Aire | Desde Condiciones Actuales |
+| 8 | Calendario (Mensual/Anual) | Tocar area luna/sol |
+| 9 | Narrativa del Clima | Tocar icono grande |
+| 10 | Frase del Dia | Oculto: Info > Creditos > ... |
+| 11 | Reloj Mundial | Navegacion oculta |
 
-## Troubleshooting
+## Solucion de Problemas
 
-### Upload fails
-1. Press and hold BOOT button
-2. While holding BOOT, press RST
-3. Release RST, then release BOOT
-4. Upload should now work
+### Falla la subida
+1. Presionar y mantener boton BOOT
+2. Mientras mantiene BOOT, presionar RST
+3. Soltar RST, luego soltar BOOT
+4. La subida deberia funcionar
 
-### Touch not responding
-- Clean the screen surface
-- Check GT911 detection in Serial Monitor
-- Touch firmly for at least 50ms
+### Touch no responde
+- Limpiar superficie de pantalla
+- Verificar deteccion GT911 en Monitor Serial
+- Tocar firmemente por al menos 50ms
 
-### No weather data
-- Check your WeatherAPI.com API key is valid
-- Error 403 = invalid API key
-- Verify latitude/longitude are correct
-- Check WiFi credentials
+### Sin datos del clima
+- Verificar que tu API key de WeatherAPI.com sea valida
+- Error 403 = API key invalida
+- Verificar latitud/longitud correctas
+- Revisar credenciales WiFi
 
-### Ghosting on screen
-- Use "Clean Screen" button in System Info
-- Or restart the device
+### Fantasmas en pantalla
+- Usar boton "Limpiar Pantalla" en Info del Sistema
+- O reiniciar el dispositivo
 
-## Files
+## Archivos
 
-| File | Description |
-|------|-------------|
-| `LilyGo-EPD-4-7-WeatherAPI-Touch.ino` | Main sketch |
-| `wifi_manager.h` | AP mode and web server |
-| `owm_credentials.h` | Default configuration |
-| `lang.h` | Multi-language strings |
-| `touch_handler.h` | Touch navigation |
-| `weather_narrative.h` | AI weather descriptions |
-| `weather_history.h` | Data storage system |
-| `calendar.h` | Calendar views |
-| `quote_screen.h` | Quote of the day |
-| `forecast_record.h` | Weather data structure |
-| `opensans*.h` | Font files |
+| Archivo | Descripcion |
+|---------|-------------|
+| `LilyGo-EPD-4-7-WeatherAPI-Touch.ino` | Sketch principal |
+| `wifi_manager.h` | Modo AP y servidor web |
+| `owm_credentials.h` | Configuracion por defecto |
+| `lang.h` | Strings multi-idioma |
+| `touch_handler.h` | Navegacion tactil |
+| `weather_narrative.h` | Descripciones IA del clima |
+| `weather_history.h` | Sistema de almacenamiento |
+| `calendar.h` | Vistas de calendario |
+| `quote_screen.h` | Frase del dia |
+| `forecast_record.h` | Estructura de datos |
+| `opensans*.h` | Archivos de fuentes |
 
-## Technical Details
+## Detalles Tecnicos
 
-- **Display:** 960x540 pixels, 4-bit grayscale
-- **Touch:** GT911 capacitive controller
-- **MCU:** ESP32-S3 with 8MB PSRAM
-- **Power:** Deep sleep between updates (~10uA)
-- **Storage:** NVS + FFat (~7 days) + SD card (~1 year)
-- **Wake source:** Timer
+- **Pantalla:** 960x540 pixeles, escala de grises 4-bit
+- **Touch:** Controlador capacitivo GT911
+- **MCU:** ESP32-S3 con 8MB PSRAM
+- **Consumo:** Deep sleep entre actualizaciones (~10uA)
+- **Almacenamiento:** NVS + FFat (~7 dias) + tarjeta SD (~1 ano)
+- **Fuente de despertar:** Timer
 
-## Documentation
+## Documentacion
 
-See detailed manuals in three languages:
-- [MANUAL.md](MANUAL.md) - Español
+Ver manuales detallados en tres idiomas:
+- [MANUAL.md](MANUAL.md) - Espanol
 - [MANUAL_EN.md](MANUAL_EN.md) - English
-- [MANUAL_FR.md](MANUAL_FR.md) - Français
+- [MANUAL_FR.md](MANUAL_FR.md) - Francais
 
-## License
+## Licencia
 
-Based on original work by David Bird - See Licence.txt
+Basado en trabajo original de David Bird - Ver Licence.txt
 
-## Credits
+## Creditos
 
-- Original code by David Bird 2021
-- ESP32 port by Xinyuan-LilyGO
-- Modified by Stefan Maetschke 2025
-- Touch version with extensions by XE1E 2026
-- EPD47 library by Vroland/DFRobot
-- Weather data from WeatherAPI.com
-- AI narrative by Groq/Llama
+- Codigo original por David Bird 2021
+- Port ESP32 por Xinyuan-LilyGO
+- Modificado por Stefan Maetschke 2025
+- Version touch con extensiones por XE1E 2026
+- Libreria EPD47 por Vroland/DFRobot
+- Datos del clima de WeatherAPI.com
+- Narrativa IA por Groq/Llama
 
 ---
 
