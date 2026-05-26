@@ -1,5 +1,7 @@
 # LilyGo EPD 4.7" Weather Display - Touch Version
 
+![Weather Station Display](LilyGo-EPD-4-7-WeatherAPI-Display-Touch.jpeg)
+
 Weather station for LilyGo T5 4.7" e-paper display with full touch navigation.
 
 ## Features
