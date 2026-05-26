@@ -134,9 +134,15 @@ String adjustTimeByOffset(String timeStr, int offsetHours);  // Forward declarat
 bool inAPMode = false;
 const bool FORCE_AP_MODE = false;  // Set to true to force AP mode on next boot
 unsigned long apModeStartTime = 0;
-const unsigned long AP_RETRY_TIMEOUT = 60000;  // 1 minute timeout to retry WiFi
+const unsigned long AP_RETRY_TIMEOUT = 300000;  // 5 minutes timeout (only for recovery mode)
 const int AP_MAX_RETRIES = 5;  // Max WiFi connection attempts before permanent sleep
 int apRetryCount = 0;
+
+// Helper to check if AP mode should have timeout
+bool apModeHasTimeout() {
+  // Only recovery mode has timeout; initial setup and forced mode don't
+  return currentAPModeType == AP_RECOVERY;
+}
 
 
 //fonts
@@ -658,11 +664,13 @@ void loop() {
   if (inAPMode) {
     handleAPMode();
 
-    // Check if 1 minute has passed to retry WiFi connection
-    if (millis() - apModeStartTime >= AP_RETRY_TIMEOUT) {
+    // Check if timeout has passed to retry WiFi connection (skip if FORCE_AP_MODE)
+    // Only timeout in recovery mode (not initial setup or forced mode)
+    if (apModeHasTimeout() && millis() - apModeStartTime >= AP_RETRY_TIMEOUT) {
       Serial.println("AP mode timeout - retrying WiFi connection...");
       stopAPMode();
       inAPMode = false;
+      currentAPModeType = AP_NONE;
 
       // Try to connect to WiFi
       if (StartWiFi() == WL_CONNECTED && SetupTime() == true) {
@@ -717,7 +725,8 @@ void loop() {
         esp_deep_sleep_start();
       }
 
-      // Return to AP mode for another attempt
+      // Return to AP mode for another attempt (recovery mode with timeout)
+      currentAPModeType = AP_RECOVERY;
       inAPMode = true;
       apModeStartTime = millis();
       displayAPModeScreen();
@@ -771,14 +780,64 @@ void applyStoredConfig() {
   }
 }
 
+// Apply settings that can change without reboot
+// Returns true if display needs refresh
+bool applyImmediateSettings() {
+  bool needsRefresh = false;
+
+  // Language - can change immediately
+  if (strlen(config.language) > 0 && Language != String(config.language)) {
+    Language = String(config.language);
+    initLanguage(config.language);
+    needsRefresh = true;
+  }
+
+  // Units - can change immediately
+  if (strlen(config.units) > 0 && Units != String(config.units)) {
+    Units = String(config.units);
+    needsRefresh = true;
+  }
+
+  // Hemisphere - can change immediately
+  if (strlen(config.hemisphere) > 0 && Hemisphere != String(config.hemisphere)) {
+    Hemisphere = String(config.hemisphere);
+    needsRefresh = true;
+  }
+
+  // Update interval - can change immediately
+  if (config.update_interval > 0) {
+    SleepDuration = config.update_interval;
+  }
+
+  // Wake/Sleep hours - can change immediately
+  WakeupHour = config.wakeup_hour;
+  SleepHour = config.sleep_hour;
+
+  // Narrative style - can change immediately (affects next fetch)
+  // No action needed, config.narrative_style is used directly
+
+  return needsRefresh;
+}
+
 // Display AP mode info on screen
 void displayAPModeScreen() {
   epd_poweron();
   epd_clear();
   memset(framebuffer, 0xFF, EPD_WIDTH * EPD_HEIGHT / 2);
 
+  // Show mode-specific title
   setFont(OpenSans24B);
-  drawString(SCREEN_WIDTH / 2, 100, TXT_AP_WIFI_CONFIG_MODE, CENTER);
+  if (currentAPModeType == AP_INITIAL_SETUP) {
+    drawString(SCREEN_WIDTH / 2, 80, TXT_AP_INITIAL_SETUP, CENTER);
+    setFont(OpenSans12B);
+    drawString(SCREEN_WIDTH / 2, 120, TXT_AP_WIFI_CONFIG_MODE, CENTER);
+  } else if (currentAPModeType == AP_RECOVERY) {
+    drawString(SCREEN_WIDTH / 2, 80, TXT_AP_RECOVERY_MODE, CENTER);
+    setFont(OpenSans12B);
+    drawString(SCREEN_WIDTH / 2, 120, TXT_AP_WIFI_FAILED, CENTER);
+  } else {
+    drawString(SCREEN_WIDTH / 2, 100, TXT_AP_WIFI_CONFIG_MODE, CENTER);
+  }
 
   setFont(OpenSans12B);
   drawString(SCREEN_WIDTH / 2, 180, TXT_AP_CONNECT_TO_WIFI, CENTER);
@@ -795,11 +854,16 @@ void displayAPModeScreen() {
   drawString(SCREEN_WIDTH / 2, 370, "http://192.168.4.1", CENTER);
 
   setFont(OpenSans10B);
-  drawString(SCREEN_WIDTH / 2, 450, TXT_AP_DEVICE_RESTART, CENTER);
+  drawString(SCREEN_WIDTH / 2, 430, TXT_AP_DEVICE_RESTART, CENTER);
 
-  // Show retry count if we've had failed attempts
-  if (apRetryCount > 0) {
-    drawString(SCREEN_WIDTH / 2, 490, TXT_AP_ATTEMPTS_REMAINING + " " + String(AP_MAX_RETRIES - apRetryCount), CENTER);
+  // Show timeout info based on mode
+  if (apModeHasTimeout()) {
+    drawString(SCREEN_WIDTH / 2, 460, TXT_AP_TIMEOUT_INFO, CENTER);
+    if (apRetryCount > 0) {
+      drawString(SCREEN_WIDTH / 2, 490, TXT_AP_ATTEMPTS_REMAINING + " " + String(AP_MAX_RETRIES - apRetryCount), CENTER);
+    }
+  } else {
+    drawString(SCREEN_WIDTH / 2, 460, TXT_AP_NO_TIMEOUT, CENTER);
   }
 
   edp_update();
@@ -877,11 +941,25 @@ void setup() {
   // Initialize language based on config
   initLanguage(config.language);
 
+  // Check for first boot (no valid configuration)
+  if (isFirstBoot()) {
+    Serial.println("First boot detected - entering initial setup mode...");
+    Serial.println("No valid WiFi or API key configured.");
+    currentAPModeType = AP_INITIAL_SETUP;
+    inAPMode = true;
+    apRetryCount = 0;
+    apModeStartTime = millis();
+    displayAPModeScreen();
+    startAPMode();
+    return;  // Stay in loop() for AP mode handling
+  }
+
   // Check for forced AP mode (hardcoded flag or stored preference)
   if (FORCE_AP_MODE || forceAPMode) {
     Serial.println("Entering AP mode (forced via flag)...");
+    currentAPModeType = AP_FORCED;
     inAPMode = true;
-    apRetryCount = 0;  // Reset retry counter
+    apRetryCount = 0;
     apModeStartTime = millis();
     displayAPModeScreen();
     startAPMode();
@@ -942,10 +1020,11 @@ void setup() {
       }
     }
   } else {
-    // WiFi connection failed - enter AP mode
+    // WiFi connection failed - enter AP mode (recovery mode with timeout)
     Serial.println("WiFi connection failed! Entering AP mode...");
+    currentAPModeType = AP_RECOVERY;
     inAPMode = true;
-    apRetryCount = 0;  // Reset retry counter
+    apRetryCount = 0;
     apModeStartTime = millis();
     displayAPModeScreen();
     startAPMode();

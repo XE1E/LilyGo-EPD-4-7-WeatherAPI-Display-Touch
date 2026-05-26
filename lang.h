@@ -103,8 +103,16 @@ const char* TXT_AP_WIFI_FAILED_ARR[] = { "No se pudo conectar a WiFi", "Could no
 const char* TXT_AP_ATTEMPTS_EXHAUSTED_ARR[] = { "Intentos agotados", "Attempts exhausted", "Tentatives epuisees" };
 const char* TXT_AP_PERMANENT_SLEEP_ARR[] = { "Entrando en modo sleep permanente", "Entering permanent sleep mode", "Entree en mode veille permanent" };
 const char* TXT_AP_PRESS_RESET_ARR[] = { "Presione RESET para reiniciar", "Press RESET to restart", "Appuyez sur RESET pour redemarrer" };
+const char* TXT_AP_INITIAL_SETUP_ARR[] = { "Configuracion Inicial", "Initial Setup", "Configuration Initiale" };
+const char* TXT_AP_RECOVERY_MODE_ARR[] = { "Modo Recuperacion", "Recovery Mode", "Mode Recuperation" };
+const char* TXT_AP_NO_TIMEOUT_ARR[] = { "Sin limite de tiempo", "No time limit", "Pas de limite de temps" };
+const char* TXT_AP_TIMEOUT_INFO_ARR[] = { "Timeout: 5 min", "Timeout: 5 min", "Delai: 5 min" };
 
 #define TXT_AP_WIFI_CONFIG_MODE String(TXT_AP_WIFI_CONFIG_MODE_ARR[currentLang])
+#define TXT_AP_INITIAL_SETUP String(TXT_AP_INITIAL_SETUP_ARR[currentLang])
+#define TXT_AP_RECOVERY_MODE String(TXT_AP_RECOVERY_MODE_ARR[currentLang])
+#define TXT_AP_NO_TIMEOUT String(TXT_AP_NO_TIMEOUT_ARR[currentLang])
+#define TXT_AP_TIMEOUT_INFO String(TXT_AP_TIMEOUT_INFO_ARR[currentLang])
 #define TXT_AP_CONNECT_TO_WIFI String(TXT_AP_CONNECT_TO_WIFI_ARR[currentLang])
 #define TXT_AP_PASSWORD String(TXT_AP_PASSWORD_ARR[currentLang])
 #define TXT_AP_OPEN_BROWSER String(TXT_AP_OPEN_BROWSER_ARR[currentLang])

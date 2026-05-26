@@ -28,6 +28,18 @@ Preferences preferences;
 // Flag to force AP mode (stored in preferences)
 bool forceAPMode = false;
 
+// AP Mode types for different behavior
+enum APModeType {
+  AP_NONE,           // Not in AP mode
+  AP_INITIAL_SETUP,  // First boot, no valid config - no timeout
+  AP_RECOVERY,       // WiFi failed - has timeout
+  AP_FORCED          // FORCE_AP_MODE flag - no timeout
+};
+APModeType currentAPModeType = AP_NONE;
+
+// Forward declaration for immediate settings application
+bool applyImmediateSettings();
+
 // Track web activity to prevent sleep during configuration
 unsigned long lastWebRequestTime = 0;
 const unsigned long WEB_ACTIVITY_TIMEOUT = 120000;  // 2 minutes without web activity
@@ -244,6 +256,65 @@ const char CONFIG_PAGE[] PROGMEM = R"rawliteral(
       color: var(--text-muted);
       margin-bottom: 8px;
     }
+    .input-with-btn {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+    .input-with-btn input[type="password"],
+    .input-with-btn input[type="text"] {
+      width: 100%;
+      min-width: 100px;
+    }
+    .btn-test {
+      padding: 12px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.85rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .btn-test:hover {
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+    .btn-test:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .btn-test.testing {
+      background: var(--warning);
+      border-color: var(--warning);
+      color: #000;
+    }
+    .btn-test.success {
+      background: var(--success);
+      border-color: var(--success);
+    }
+    .btn-test.error {
+      background: var(--danger);
+      border-color: var(--danger);
+    }
+    .test-result {
+      font-size: 0.8rem;
+      margin-top: 6px;
+      padding: 8px;
+      border-radius: 6px;
+      display: none;
+    }
+    .test-result.show { display: block; }
+    .test-result.success {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--success);
+    }
+    .test-result.error {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--danger);
+    }
   </style>
 </head>
 <body>
@@ -267,11 +338,15 @@ const char CONFIG_PAGE[] PROGMEM = R"rawliteral(
           <div class="network-header">Red Principal</div>
           <div class="form-group">
             <label>SSID</label>
-            <input type="text" name="ssid1" value="%SSID1%" placeholder="Nombre de red" maxlength="32">
+            <input type="text" name="ssid1" id="ssid1" value="%SSID1%" placeholder="Nombre de red" maxlength="32">
           </div>
           <div class="form-group">
             <label>Contrasena</label>
-            <input type="password" name="pass1" value="%PASS1%" placeholder="••••••••" maxlength="64">
+            <div class="input-with-btn">
+              <input type="password" name="pass1" id="pass1" value="%PASS1%" placeholder="••••••••" maxlength="64">
+              <button type="button" class="btn-test" onclick="testWiFi('ssid1','pass1',this)">Probar</button>
+            </div>
+            <div class="test-result" id="wifi1-result"></div>
           </div>
         </div>
 
@@ -279,11 +354,15 @@ const char CONFIG_PAGE[] PROGMEM = R"rawliteral(
           <div class="network-header">Red Secundaria (opcional)</div>
           <div class="form-group">
             <label>SSID</label>
-            <input type="text" name="ssid2" value="%SSID2%" placeholder="Nombre de red" maxlength="32">
+            <input type="text" name="ssid2" id="ssid2" value="%SSID2%" placeholder="Nombre de red" maxlength="32">
           </div>
           <div class="form-group">
             <label>Contrasena</label>
-            <input type="password" name="pass2" value="%PASS2%" placeholder="••••••••" maxlength="64">
+            <div class="input-with-btn">
+              <input type="password" name="pass2" id="pass2" value="%PASS2%" placeholder="••••••••" maxlength="64">
+              <button type="button" class="btn-test" onclick="testWiFi('ssid2','pass2',this)">Probar</button>
+            </div>
+            <div class="test-result" id="wifi2-result"></div>
           </div>
         </div>
 
@@ -291,11 +370,15 @@ const char CONFIG_PAGE[] PROGMEM = R"rawliteral(
           <div class="network-header">Red Terciaria (opcional)</div>
           <div class="form-group">
             <label>SSID</label>
-            <input type="text" name="ssid3" value="%SSID3%" placeholder="Nombre de red" maxlength="32">
+            <input type="text" name="ssid3" id="ssid3" value="%SSID3%" placeholder="Nombre de red" maxlength="32">
           </div>
           <div class="form-group">
             <label>Contrasena</label>
-            <input type="password" name="pass3" value="%PASS3%" placeholder="••••••••" maxlength="64">
+            <div class="input-with-btn">
+              <input type="password" name="pass3" id="pass3" value="%PASS3%" placeholder="••••••••" maxlength="64">
+              <button type="button" class="btn-test" onclick="testWiFi('ssid3','pass3',this)">Probar</button>
+            </div>
+            <div class="test-result" id="wifi3-result"></div>
           </div>
         </div>
       </div>
@@ -306,7 +389,11 @@ const char CONFIG_PAGE[] PROGMEM = R"rawliteral(
           <div class="card-title">WeatherAPI</div>
           <div class="form-group">
             <label>API Key</label>
-            <input type="text" name="apikey" value="%APIKEY%" placeholder="Tu API key" maxlength="64">
+            <div class="input-with-btn">
+              <input type="text" name="apikey" id="apikey" value="%APIKEY%" placeholder="Tu API key" maxlength="64">
+              <button type="button" class="btn-test" onclick="testAPI(this)">Probar</button>
+            </div>
+            <div class="test-result" id="api-result"></div>
             <div class="hint">Obten tu key gratis en weatherapi.com</div>
           </div>
         </div>
@@ -472,6 +559,99 @@ const char CONFIG_PAGE[] PROGMEM = R"rawliteral(
       document.querySelector(`[onclick="showTab('${tabId}')"]`).classList.add('active');
       document.getElementById(tabId).classList.add('active');
     }
+
+    async function testWiFi(ssidId, passId, btn) {
+      const ssid = document.getElementById(ssidId).value;
+      const pass = document.getElementById(passId).value;
+      const resultId = ssidId.replace('ssid','wifi') + '-result';
+      const resultEl = document.getElementById(resultId);
+
+      if (!ssid) {
+        showResult(resultEl, 'error', 'Ingresa el SSID');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.classList.remove('success', 'error');
+      btn.classList.add('testing');
+      btn.textContent = 'Probando...';
+      resultEl.classList.remove('show');
+
+      try {
+        const response = await fetch('/test-wifi?ssid=' + encodeURIComponent(ssid) + '&pass=' + encodeURIComponent(pass));
+        const data = await response.json();
+
+        btn.classList.remove('testing');
+        if (data.success) {
+          btn.classList.add('success');
+          btn.textContent = '✓ OK';
+          showResult(resultEl, 'success', 'Conectado! IP: ' + data.ip + ' | Senal: ' + data.rssi + ' dBm');
+        } else {
+          btn.classList.add('error');
+          btn.textContent = '✗ Error';
+          showResult(resultEl, 'error', data.message || 'No se pudo conectar');
+        }
+      } catch (e) {
+        btn.classList.remove('testing');
+        btn.classList.add('error');
+        btn.textContent = '✗ Error';
+        showResult(resultEl, 'error', 'Error de conexion');
+      }
+
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.classList.remove('success', 'error');
+        btn.textContent = 'Probar';
+      }, 5000);
+    }
+
+    async function testAPI(btn) {
+      const apikey = document.getElementById('apikey').value;
+      const resultEl = document.getElementById('api-result');
+
+      if (!apikey || apikey.includes('YOUR_')) {
+        showResult(resultEl, 'error', 'Ingresa una API key valida');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.classList.remove('success', 'error');
+      btn.classList.add('testing');
+      btn.textContent = 'Probando...';
+      resultEl.classList.remove('show');
+
+      try {
+        const response = await fetch('/test-api?key=' + encodeURIComponent(apikey));
+        const data = await response.json();
+
+        btn.classList.remove('testing');
+        if (data.success) {
+          btn.classList.add('success');
+          btn.textContent = '✓ OK';
+          showResult(resultEl, 'success', 'API valida! Ubicacion: ' + data.location);
+        } else {
+          btn.classList.add('error');
+          btn.textContent = '✗ Error';
+          showResult(resultEl, 'error', data.message || 'API key invalida');
+        }
+      } catch (e) {
+        btn.classList.remove('testing');
+        btn.classList.add('error');
+        btn.textContent = '✗ Error';
+        showResult(resultEl, 'error', 'Error de conexion');
+      }
+
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.classList.remove('success', 'error');
+        btn.textContent = 'Probar';
+      }, 5000);
+    }
+
+    function showResult(el, type, message) {
+      el.className = 'test-result show ' + type;
+      el.textContent = message;
+    }
   </script>
 </body>
 </html>
@@ -506,6 +686,49 @@ const char SAVE_PAGE[] PROGMEM = R"rawliteral(
 </html>
 )rawliteral";
 
+// Auto-reboot page for AP mode saves
+const char AP_SAVE_REBOOT_PAGE[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Guardado - Reiniciando</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background: #0f172a; color: #f1f5f9; }
+    .container { text-align: center; background: #1e293b; padding: 40px; border-radius: 16px; max-width: 400px; margin: 16px; }
+    .icon { font-size: 4rem; margin-bottom: 16px; }
+    h1 { color: #10b981; font-size: 1.5rem; margin-bottom: 12px; }
+    p { color: #94a3b8; margin-bottom: 8px; }
+    .countdown { font-size: 3rem; color: #3b82f6; font-weight: bold; margin: 20px 0; }
+    .info { font-size: 0.9rem; color: #64748b; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">✓</div>
+    <h1>Configuracion Guardada</h1>
+    <p>El dispositivo se reiniciara automaticamente.</p>
+    <div class="countdown" id="countdown">5</div>
+    <p class="info">Despues del reinicio, conectate a tu red WiFi<br>y accede a la IP del dispositivo.</p>
+  </div>
+  <script>
+    let seconds = 5;
+    const countdownEl = document.getElementById('countdown');
+    const interval = setInterval(() => {
+      seconds--;
+      countdownEl.textContent = seconds;
+      if (seconds <= 0) {
+        clearInterval(interval);
+        countdownEl.textContent = '...';
+      }
+    }, 1000);
+  </script>
+</body>
+</html>
+)rawliteral";
+
 const char REBOOT_PAGE[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
 <html>
@@ -529,6 +752,69 @@ const char REBOOT_PAGE[] PROGMEM = R"rawliteral(
     <h1>Reiniciando...</h1>
     <p>El dispositivo se reiniciara y conectara a tu red WiFi.</p>
     <p>La pantalla del clima se actualizara automaticamente.</p>
+  </div>
+</body>
+</html>
+)rawliteral";
+
+// Save response page for normal mode - shows what needs reboot
+const char SAVE_NORMAL_PAGE[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Guardado</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background: #0f172a; color: #f1f5f9; }
+    .container { text-align: center; background: #1e293b; padding: 40px; border-radius: 16px; max-width: 450px; margin: 16px; }
+    .icon { font-size: 4rem; margin-bottom: 16px; }
+    h1 { color: #10b981; font-size: 1.5rem; margin-bottom: 16px; }
+    .section { background: #334155; border-radius: 8px; padding: 16px; margin: 16px 0; text-align: left; }
+    .section h3 { margin: 0 0 8px 0; font-size: 0.9rem; }
+    .section.immediate h3 { color: #10b981; }
+    .section.reboot h3 { color: #f59e0b; }
+    .section ul { margin: 0; padding-left: 20px; color: #94a3b8; font-size: 0.85rem; }
+    .buttons { display: flex; gap: 12px; justify-content: center; margin-top: 20px; }
+    a, button { padding: 12px 20px; border-radius: 8px; font-weight: 600; text-decoration: none; border: none; cursor: pointer; font-size: 0.95rem; }
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-secondary { background: #475569; color: white; }
+    .btn-secondary:hover { background: #64748b; }
+    .btn-warning { background: #f59e0b; color: #0f172a; }
+    .btn-warning:hover { background: #d97706; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">✓</div>
+    <h1>Configuracion Guardada</h1>
+
+    <div class="section immediate">
+      <h3>✓ Aplicado inmediatamente:</h3>
+      <ul>
+        <li>Idioma y unidades</li>
+        <li>Intervalo de actualizacion</li>
+        <li>Horario de actividad</li>
+        <li>Estilo de narrativa</li>
+      </ul>
+    </div>
+
+    <div class="section reboot">
+      <h3>⚠ Requiere reinicio:</h3>
+      <ul>
+        <li>Credenciales WiFi</li>
+        <li>API Keys</li>
+        <li>Ubicacion / Coordenadas</li>
+        <li>Zona horaria</li>
+      </ul>
+    </div>
+
+    <div class="buttons">
+      <a href="/" class="btn-secondary">Volver</a>
+      <button onclick="location.href='/do-reboot'" class="btn-warning">Reiniciar Ahora</button>
+    </div>
   </div>
 </body>
 </html>
@@ -1052,9 +1338,26 @@ void setForceAPMode(bool force) {
   forceAPMode = force;
 }
 
-// Check if configuration exists
+// Check if a string is a placeholder value
+bool isPlaceholder(const char* value) {
+  if (strlen(value) == 0) return true;
+  if (strstr(value, "YOUR_") != NULL) return true;
+  if (strcmp(value, "Your_WiFi_SSID") == 0) return true;
+  if (strcmp(value, "Your_WiFi_Password") == 0) return true;
+  return false;
+}
+
+// Check if configuration exists and is valid (not placeholders)
 bool hasValidConfig() {
-  return strlen(config.wifi_ssid) > 0 && strlen(config.api_key) > 0;
+  return !isPlaceholder(config.wifi_ssid) && !isPlaceholder(config.api_key);
+}
+
+// Check if this is first boot (no real config ever saved)
+bool isFirstBoot() {
+  preferences.begin("weather", true);
+  bool hasConfig = preferences.getString("apikey", "").length() > 0;
+  preferences.end();
+  return !hasConfig || isPlaceholder(config.api_key);
 }
 
 // Process template placeholders
@@ -1199,6 +1502,116 @@ void handleHistoryCSV() {
   file.close();
 }
 
+// Test WiFi credentials by scanning for the network
+void handleTestWiFi() {
+  lastWebRequestTime = millis();
+  String ssid = webServer.arg("ssid");
+  String pass = webServer.arg("pass");
+
+  if (ssid.length() == 0) {
+    webServer.send(200, "application/json", "{\"success\":false,\"message\":\"SSID vacio\"}");
+    return;
+  }
+
+  // In AP mode, we can scan but not actually test connection
+  // In STA mode, we scan for the network to verify it exists
+
+  Serial.println("WiFi Test: Scanning for network: " + ssid);
+
+  int numNetworks = WiFi.scanNetworks(false, true);  // Async=false, show hidden=true
+  bool found = false;
+  int rssi = -100;
+
+  for (int i = 0; i < numNetworks; i++) {
+    if (WiFi.SSID(i) == ssid) {
+      found = true;
+      rssi = WiFi.RSSI(i);
+      break;
+    }
+  }
+
+  WiFi.scanDelete();  // Clean up scan results
+
+  if (found) {
+    String response = "{\"success\":true,\"ip\":\"Red encontrada\",\"rssi\":" + String(rssi) + "}";
+    webServer.send(200, "application/json", response);
+    Serial.println("WiFi Test: Network found, RSSI: " + String(rssi));
+  } else {
+    webServer.send(200, "application/json", "{\"success\":false,\"message\":\"Red no encontrada\"}");
+    Serial.println("WiFi Test: Network not found");
+  }
+}
+
+// Test WeatherAPI key by making a simple request
+void handleTestAPI() {
+  lastWebRequestTime = millis();
+  String apiKey = webServer.arg("key");
+
+  if (apiKey.length() == 0 || apiKey.indexOf("YOUR_") >= 0) {
+    webServer.send(200, "application/json", "{\"success\":false,\"message\":\"API key invalida\"}");
+    return;
+  }
+
+  // Check if we have internet connectivity (not in AP mode)
+  if (currentAPModeType != AP_NONE) {
+    webServer.send(200, "application/json", "{\"success\":false,\"message\":\"Sin conexion a internet en modo AP\"}");
+    return;
+  }
+
+  Serial.println("API Test: Testing key...");
+
+  WiFiClientSecure client;
+  client.setInsecure();  // Skip certificate verification for test
+
+  if (!client.connect("api.weatherapi.com", 443)) {
+    webServer.send(200, "application/json", "{\"success\":false,\"message\":\"No se pudo conectar a WeatherAPI\"}");
+    return;
+  }
+
+  // Make a simple request to verify the API key
+  String url = "/v1/current.json?key=" + apiKey + "&q=auto:ip&aqi=no";
+  client.println("GET " + url + " HTTP/1.1");
+  client.println("Host: api.weatherapi.com");
+  client.println("Connection: close");
+  client.println();
+
+  // Wait for response
+  unsigned long timeout = millis();
+  while (client.connected() && !client.available()) {
+    if (millis() - timeout > 10000) {
+      client.stop();
+      webServer.send(200, "application/json", "{\"success\":false,\"message\":\"Timeout de conexion\"}");
+      return;
+    }
+    delay(10);
+  }
+
+  // Read response
+  String response = "";
+  while (client.available()) {
+    response += client.readString();
+  }
+  client.stop();
+
+  // Check response
+  if (response.indexOf("200 OK") > 0 && response.indexOf("\"location\"") > 0) {
+    // Extract location name from response
+    int locStart = response.indexOf("\"name\":\"") + 8;
+    int locEnd = response.indexOf("\"", locStart);
+    String location = response.substring(locStart, locEnd);
+
+    String jsonResponse = "{\"success\":true,\"location\":\"" + location + "\"}";
+    webServer.send(200, "application/json", jsonResponse);
+    Serial.println("API Test: Success, location: " + location);
+  } else if (response.indexOf("401") > 0 || response.indexOf("403") > 0) {
+    webServer.send(200, "application/json", "{\"success\":false,\"message\":\"API key invalida o expirada\"}");
+    Serial.println("API Test: Invalid key (401/403)");
+  } else {
+    webServer.send(200, "application/json", "{\"success\":false,\"message\":\"Error en la respuesta de API\"}");
+    Serial.println("API Test: Unexpected response");
+  }
+}
+
 // Web server handlers
 void handleRoot() {
   lastWebRequestTime = millis();  // Track web activity
@@ -1206,9 +1619,8 @@ void handleRoot() {
   webServer.send(200, "text/html", html);
 }
 
-void handleSave() {
-  lastWebRequestTime = millis();  // Track web activity
-  // Get form values
+// Helper function to parse form values into config
+void parseFormToConfig() {
   strlcpy(config.wifi_ssid, webServer.arg("ssid1").c_str(), sizeof(config.wifi_ssid));
   strlcpy(config.wifi_password, webServer.arg("pass1").c_str(), sizeof(config.wifi_password));
   strlcpy(config.wifi_ssid2, webServer.arg("ssid2").c_str(), sizeof(config.wifi_ssid2));
@@ -1234,43 +1646,43 @@ void handleSave() {
   config.wakeup_hour = webServer.arg("wakeup_hour").toInt();
   config.sleep_hour = webServer.arg("sleep_hour").toInt();
   config.narrative_style = webServer.arg("narrative_style").toInt();
+}
 
+void handleSave() {
+  lastWebRequestTime = millis();
+  parseFormToConfig();
   saveConfig();
 
-  webServer.send(200, "text/html", SAVE_PAGE);
+  // In AP mode, auto-reboot after save
+  if (currentAPModeType != AP_NONE) {
+    Serial.println("AP Mode: Config saved, rebooting in 5 seconds...");
+    webServer.send(200, "text/html", AP_SAVE_REBOOT_PAGE);
+    delay(5000);
+    ESP.restart();
+  } else {
+    // Normal mode: apply immediate settings and show status
+    bool needsRefresh = applyImmediateSettings();
+    Serial.println("Normal mode: Config saved, immediate settings applied");
+    if (needsRefresh) {
+      Serial.println("Display refresh needed for language/units change");
+    }
+    webServer.send(200, "text/html", SAVE_NORMAL_PAGE);
+  }
 }
 
 void handleReboot() {
-  lastWebRequestTime = millis();  // Track web activity
-  // Save first
-  strlcpy(config.wifi_ssid, webServer.arg("ssid1").c_str(), sizeof(config.wifi_ssid));
-  strlcpy(config.wifi_password, webServer.arg("pass1").c_str(), sizeof(config.wifi_password));
-  strlcpy(config.wifi_ssid2, webServer.arg("ssid2").c_str(), sizeof(config.wifi_ssid2));
-  strlcpy(config.wifi_password2, webServer.arg("pass2").c_str(), sizeof(config.wifi_password2));
-  strlcpy(config.wifi_ssid3, webServer.arg("ssid3").c_str(), sizeof(config.wifi_ssid3));
-  strlcpy(config.wifi_password3, webServer.arg("pass3").c_str(), sizeof(config.wifi_password3));
-  strlcpy(config.api_key, webServer.arg("apikey").c_str(), sizeof(config.api_key));
-  strlcpy(config.groq_apikey, webServer.arg("groqkey").c_str(), sizeof(config.groq_apikey));
-  config.forecast_days = webServer.arg("forecast_days").toInt();
-  strlcpy(config.city, webServer.arg("city").c_str(), sizeof(config.city));
-  strlcpy(config.latitude, webServer.arg("lat").c_str(), sizeof(config.latitude));
-  strlcpy(config.longitude, webServer.arg("lon").c_str(), sizeof(config.longitude));
-  strlcpy(config.location_id, webServer.arg("location_id").c_str(), sizeof(config.location_id));
-  strlcpy(config.language, webServer.arg("lang").c_str(), sizeof(config.language));
-  strlcpy(config.hemisphere, webServer.arg("hemisphere").c_str(), sizeof(config.hemisphere));
-  strlcpy(config.units, webServer.arg("units").c_str(), sizeof(config.units));
-  strlcpy(config.timezone, webServer.arg("tz").c_str(), sizeof(config.timezone));
-  config.gmt_offset = webServer.arg("gmt").toInt();
-  config.dst_offset = webServer.arg("dst").toInt();
-  config.update_interval = webServer.arg("update_interval").toInt();
-  config.sleep_timeout = webServer.arg("sleep_timeout").toInt();
-  config.keep_screen_on_sleep = webServer.arg("keep_screen") == "1";
-  config.wakeup_hour = webServer.arg("wakeup_hour").toInt();
-  config.sleep_hour = webServer.arg("sleep_hour").toInt();
-  config.narrative_style = webServer.arg("narrative_style").toInt();
-
+  lastWebRequestTime = millis();
+  parseFormToConfig();
   saveConfig();
 
+  webServer.send(200, "text/html", REBOOT_PAGE);
+  delay(1000);
+  ESP.restart();
+}
+
+// Simple reboot handler (config already saved)
+void handleDoReboot() {
+  lastWebRequestTime = millis();
   webServer.send(200, "text/html", REBOOT_PAGE);
   delay(1000);
   ESP.restart();
@@ -1335,7 +1747,10 @@ void startAPMode() {
   webServer.on("/", HTTP_GET, handleRoot);
   webServer.on("/save", HTTP_POST, handleSave);
   webServer.on("/reboot", HTTP_POST, handleReboot);
+  webServer.on("/do-reboot", HTTP_GET, handleDoReboot);
   webServer.on("/reset", HTTP_POST, handleReset);
+  webServer.on("/test-wifi", HTTP_GET, handleTestWiFi);
+  webServer.on("/test-api", HTTP_GET, handleTestAPI);
   webServer.on("/history", HTTP_GET, handleHistory);
   webServer.on("/history.csv", HTTP_GET, handleHistoryCSV);
   webServer.on("/ota", HTTP_GET, handleOTA);
@@ -1384,7 +1799,10 @@ void startWebServer() {
   webServer.on("/", HTTP_GET, handleRoot);
   webServer.on("/save", HTTP_POST, handleSave);
   webServer.on("/reboot", HTTP_POST, handleReboot);
+  webServer.on("/do-reboot", HTTP_GET, handleDoReboot);
   webServer.on("/reset", HTTP_POST, handleReset);
+  webServer.on("/test-wifi", HTTP_GET, handleTestWiFi);
+  webServer.on("/test-api", HTTP_GET, handleTestAPI);
   webServer.on("/history", HTTP_GET, handleHistory);
   webServer.on("/history.csv", HTTP_GET, handleHistoryCSV);
   webServer.on("/ota", HTTP_GET, handleOTA);
