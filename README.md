@@ -52,6 +52,23 @@ Optional: MicroSD card for extended weather history
 - EPD47-master: https://github.com/DFRobotdl/EPD47/archive/refs/heads/master.zip
 - ArduinoJson: by Benoit Blanchon 6.19.0
 
+**Alternative: Install via Web (no Arduino IDE needed)**
+
+[![Install Firmware](https://img.shields.io/badge/Install-Firmware-blue?style=for-the-badge)](https://xe1e.github.io/LilyGo-EPD-4-7-WeatherAPI-Display-Touch/)
+
+Use Chrome, Edge or Opera browser and connect device via USB.
+
+### Firmware Updates (OTA)
+
+The device supports wireless firmware updates:
+
+| Method | URL / How to use |
+|--------|------------------|
+| **Web OTA** | `http://[DEVICE_IP]/ota` - Upload .bin from browser |
+| **Arduino OTA** | Select "WeatherStation" network port in Arduino IDE |
+| **Web Flasher** | [xe1e.github.io/LilyGo-EPD-4-7-WeatherAPI-Display-Touch](https://xe1e.github.io/LilyGo-EPD-4-7-WeatherAPI-Display-Touch/) |
+| **Releases** | [Download .bin files](https://github.com/XE1E/LilyGo-EPD-4-7-WeatherAPI-Display-Touch/releases) |
+
 ### 2. First Boot Configuration
 
 On first power-up (or when no WiFi available), the device enters configuration mode:

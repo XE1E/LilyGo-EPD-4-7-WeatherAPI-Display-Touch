@@ -414,6 +414,11 @@ Flash from your browser without installing anything:
 - Chrome, Edge or Opera browser (requires Web Serial API)
 - USB cable connected to the device
 
+#### Download Firmware
+
+Compiled .bin files are available at:
+`https://github.com/XE1E/LilyGo-EPD-4-7-WeatherAPI-Display-Touch/releases`
+
 ---
 
 ## 5. Configuration
