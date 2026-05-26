@@ -233,9 +233,9 @@ El display soporta 16 niveles de gris definidos en el codigo:
 ### 3.2 Estructura de Archivos
 
 ```
-LilyGo-EPD-4-7-WeatherAPI-Touch/
+LilyGo-EPD-4-7-WeatherAPI-Display-Touch/
 |
-+-- LilyGo-EPD-4-7-WeatherAPI-Touch.ino  # Sketch principal
++-- LilyGo-EPD-4-7-WeatherAPI-Display-Touch.ino  # Sketch principal
 |
 +-- owm_credentials.h     # Credenciales WiFi y API (valores por defecto)
 |

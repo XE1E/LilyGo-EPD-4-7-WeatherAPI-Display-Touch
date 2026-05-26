@@ -174,7 +174,7 @@ Apres configuration, l'appareil:
 
 | Fichier | Description |
 |---------|-------------|
-| `LilyGo-EPD-4-7-WeatherAPI-Touch.ino` | Sketch principal |
+| `LilyGo-EPD-4-7-WeatherAPI-Display-Touch.ino` | Sketch principal |
 | `wifi_manager.h` | Mode AP et serveur web |
 | `owm_credentials.h` | Configuration par defaut |
 | `lang.h` | Chaines multi-langue |

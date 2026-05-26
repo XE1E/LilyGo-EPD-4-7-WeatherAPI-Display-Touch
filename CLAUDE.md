@@ -41,7 +41,7 @@ If upload fails, enter bootloader mode:
 If WiFi fails or `FORCE_AP_MODE=true`, enters AP mode with captive portal for configuration.
 
 ### Key Files
-- **LilyGo-EPD-4-7-WeatherAPI-Touch.ino**: Main sketch - WiFi connection, API calls, display rendering, touch navigation, sleep management
+- **LilyGo-EPD-4-7-WeatherAPI-Display-Touch.ino**: Main sketch - WiFi connection, API calls, display rendering, touch navigation, sleep management
 - **owm_credentials.h**: Default configuration (WiFi SSIDs, API key, location, timezone). Values can be overridden via web config
 - **wifi_manager.h**: AP mode captive portal, web server, preferences storage (ESP32 NVS)
 - **forecast_record.h**: `Forecast_record_type` struct for weather data (extended for WeatherAPI fields)

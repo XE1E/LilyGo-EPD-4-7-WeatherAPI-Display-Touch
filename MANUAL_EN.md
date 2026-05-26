@@ -233,9 +233,9 @@ The display supports 16 gray levels defined in code:
 ### 3.2 File Structure
 
 ```
-LilyGo-EPD-4-7-WeatherAPI-Touch/
+LilyGo-EPD-4-7-WeatherAPI-Display-Touch/
 |
-+-- LilyGo-EPD-4-7-WeatherAPI-Touch.ino  # Main sketch
++-- LilyGo-EPD-4-7-WeatherAPI-Display-Touch.ino  # Main sketch
 |
 +-- owm_credentials.h     # WiFi and API credentials (defaults)
 |
