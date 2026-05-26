@@ -34,7 +34,23 @@ Optional: MicroSD card for extended weather history
 
 ## Quick Start
 
-### 1. Upload Firmware
+### 1. Install Firmware
+
+#### Recommended: Web Flasher (no installation needed)
+
+> **The easiest way to install.** You only need a browser and USB cable.
+
+[![Install Firmware](https://img.shields.io/badge/🚀_INSTALL_FIRMWARE-blue?style=for-the-badge&logo=esphome)](https://xe1e.github.io/LilyGo-EPD-4-7-WeatherAPI-Display-Touch/)
+
+1. Connect device via USB-C cable
+2. Open the link in **Chrome, Edge or Opera**
+3. Click "Install Firmware" and select COM port
+4. Wait ~1 minute for completion
+
+#### Alternative: Arduino IDE (for developers)
+
+<details>
+<summary>Click to see Arduino IDE setup</summary>
 
 **Arduino IDE Settings:**
 | Setting | Value |
@@ -54,11 +70,7 @@ Optional: MicroSD card for extended weather history
 - EPD47-master: https://github.com/DFRobotdl/EPD47/archive/refs/heads/master.zip
 - ArduinoJson: by Benoit Blanchon 6.19.0
 
-**Alternative: Install via Web (no Arduino IDE needed)**
-
-[![Install Firmware](https://img.shields.io/badge/Install-Firmware-blue?style=for-the-badge)](https://xe1e.github.io/LilyGo-EPD-4-7-WeatherAPI-Display-Touch/)
-
-Use Chrome, Edge or Opera browser and connect device via USB.
+</details>
 
 ### Firmware Updates (OTA)
 

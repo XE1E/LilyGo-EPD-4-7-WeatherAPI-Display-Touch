@@ -122,6 +122,42 @@
       margin-bottom: 24px;
       font-size: 0.9rem;
     }
+    .instructions, .troubleshoot {
+      margin-top: 24px;
+      padding: 20px;
+      background: rgba(59, 130, 246, 0.08);
+      border-radius: 12px;
+      text-align: left;
+    }
+    .instructions h3, .troubleshoot h3 {
+      font-size: 1rem;
+      margin-bottom: 12px;
+      color: var(--primary);
+    }
+    .instructions ol {
+      padding-left: 20px;
+      color: var(--text-muted);
+    }
+    .instructions li {
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+    }
+    .troubleshoot {
+      background: rgba(245, 158, 11, 0.08);
+    }
+    .troubleshoot h3 {
+      color: #fbbf24;
+    }
+    .troubleshoot ul {
+      list-style: none;
+      color: var(--text-muted);
+    }
+    .troubleshoot li {
+      margin-bottom: 8px;
+      font-size: 0.85rem;
+      padding-left: 8px;
+      border-left: 2px solid #fbbf2444;
+    }
     .help {
       margin-top: 24px;
       font-size: 0.85rem;
@@ -194,6 +230,26 @@
           <li>LilyGo T5 4.7" S3</li>
           <li>ESP32-S3</li>
           <li>Cable USB-C</li>
+        </ul>
+      </div>
+
+      <div class="instructions">
+        <h3>Como instalar</h3>
+        <ol>
+          <li><strong>Conecta</strong> el dispositivo via cable USB-C a tu computadora</li>
+          <li><strong>Haz clic</strong> en "Instalar Firmware" arriba</li>
+          <li><strong>Selecciona</strong> el puerto COM (ej: COM3, /dev/ttyUSB0)</li>
+          <li><strong>Espera</strong> a que termine la instalacion (~1 min)</li>
+          <li><strong>Configura</strong> conectandote a WiFi "WeatherStation-Setup"</li>
+        </ol>
+      </div>
+
+      <div class="troubleshoot">
+        <h3>Solucion de problemas</h3>
+        <ul>
+          <li><strong>"No port selected"</strong> = No seleccionaste puerto. Reconecta el cable y reintenta.</li>
+          <li><strong>No aparece puerto</strong> = Instala drivers CH340/CP2102 o usa otro cable USB.</li>
+          <li><strong>Falla la conexion</strong> = Entra en modo bootloader: manten BOOT, presiona RST, suelta RST, suelta BOOT.</li>
         </ul>
       </div>
 
