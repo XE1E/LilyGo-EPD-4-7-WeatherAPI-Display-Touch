@@ -1,6 +1,6 @@
 {
   "name": "Weather Station EPD 4.7",
-  "version": "ecaf0bd",
+  "version": "3a72a0f",
   "home_assistant_domain": "esphome",
   "funding_url": "https://github.com/XE1E/LilyGo-EPD-4-7-WeatherAPI-Display-Touch",
   "new_install_prompt_erase": true,
