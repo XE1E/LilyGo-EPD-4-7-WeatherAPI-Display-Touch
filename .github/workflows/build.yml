@@ -35,13 +35,19 @@ jobs:
           curl -L https://github.com/DFRobotdl/EPD47/archive/refs/heads/master.zip -o /tmp/epd47.zip
           unzip /tmp/epd47.zip -d ~/Arduino/libraries/
 
+      - name: Prepare sketch folder
+        run: |
+          mkdir -p ~/Arduino/LilyGo-EPD-4-7-WeatherAPI-Touch
+          cp -r ./* ~/Arduino/LilyGo-EPD-4-7-WeatherAPI-Touch/ 2>/dev/null || true
+          cp -r ./*.ino ./*.h ./*.cpp ~/Arduino/LilyGo-EPD-4-7-WeatherAPI-Touch/ 2>/dev/null || true
+
       - name: Compile firmware
         run: |
           arduino-cli compile \
             --fqbn esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=16M,FlashMode=qio80,PartitionScheme=fatflash,PSRAM=opi \
             --output-dir ./build \
             --warnings none \
-            LilyGo-EPD-4-7-WeatherAPI-Touch.ino
+            ~/Arduino/LilyGo-EPD-4-7-WeatherAPI-Touch
 
       - name: Rename firmware
         run: |
