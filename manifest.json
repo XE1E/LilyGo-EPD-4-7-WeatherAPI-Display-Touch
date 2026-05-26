@@ -1,0 +1,17 @@
+{
+  "name": "Weather Station EPD 4.7",
+  "version": "6641904",
+  "home_assistant_domain": "esphome",
+  "funding_url": "https://github.com/XE1E/LilyGo-EPD-4-7-WeatherAPI-Display-Touch",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        { "path": "firmware/bootloader.bin", "offset": 0 },
+        { "path": "firmware/partitions.bin", "offset": 32768 },
+        { "path": "firmware/weather-station-firmware.bin", "offset": 65536 }
+      ]
+    }
+  ]
+}
