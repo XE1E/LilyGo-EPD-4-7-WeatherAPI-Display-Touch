@@ -26,12 +26,12 @@ const WiFiCredentials wifiNetworks[] = {
 const int wifiNetworkCount = sizeof(wifiNetworks) / sizeof(wifiNetworks[0]);
 
 // WeatherAPI.com - Get free API key at https://www.weatherapi.com/
-String apikey       = "***REMOVED***";
+String apikey       = "YOUR_WEATHERAPI_KEY";
 const char server[] = "api.weatherapi.com";
 
 // Groq API key for weather narrative generation (free tier)
 // Get key at: console.groq.com
-String groq_apikey = "***REMOVED***";
+String groq_apikey = "YOUR_GROQ_API_KEY";
 
 //Set your location
 String City             = "Your City";                            // Your home city name
