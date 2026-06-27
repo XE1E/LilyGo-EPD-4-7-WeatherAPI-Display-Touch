@@ -68,7 +68,7 @@ bool sdCardAvailable = false;
 #define SCREEN_HEIGHT  EPD_HEIGHT
 
 //################  VERSION  ##################################################
-String version = "2.8 / 4.7in";  // Programme version, see change log at end
+String version = "2.9 / 4.7in";  // Programme version, see change log at end
 //################ VARIABLES ##################################################
 
 enum alignment {LEFT, RIGHT, CENTER};
@@ -828,9 +828,9 @@ void displayAPModeScreen() {
   // Show mode-specific title
   setFont(OpenSans24B);
   if (currentAPModeType == AP_INITIAL_SETUP) {
-    drawString(SCREEN_WIDTH / 2, 80, TXT_AP_INITIAL_SETUP, CENTER);
+    drawString(SCREEN_WIDTH / 2, 65, TXT_AP_INITIAL_SETUP, CENTER);
     setFont(OpenSans12B);
-    drawString(SCREEN_WIDTH / 2, 120, TXT_AP_WIFI_CONFIG_MODE, CENTER);
+    drawString(SCREEN_WIDTH / 2, 105, TXT_AP_WIFI_CONFIG_MODE, CENTER);
   } else if (currentAPModeType == AP_RECOVERY) {
     drawString(SCREEN_WIDTH / 2, 80, TXT_AP_RECOVERY_MODE, CENTER);
     setFont(OpenSans12B);
