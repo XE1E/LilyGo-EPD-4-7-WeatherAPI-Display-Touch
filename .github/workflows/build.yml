@@ -98,8 +98,8 @@ jobs:
           VERSION="${GITHUB_REF_NAME#v}"
           echo "Extracting changelog section for version $VERSION"
           awk -v ver="$VERSION" '
-            $0 ~ "^## \\[" ver "\\]" {flag=1; next}
-            flag && /^## \[/ {exit}
+            index($0, "## [" ver "]")==1 {flag=1; next}
+            flag && index($0, "## [")==1 {exit}
             flag {print}
           ' CHANGELOG.md > release_notes.md
           if [ ! -s release_notes.md ]; then
