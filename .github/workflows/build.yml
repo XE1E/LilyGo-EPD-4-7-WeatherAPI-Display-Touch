@@ -80,7 +80,15 @@ jobs:
       - name: Update manifest version
         if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')
         run: |
-          VERSION=$(git describe --tags --always)
+          # Derive version from the firmware source of truth (e.g. "2.9 / 4.7in" -> "v2.9").
+          # Falls back to git describe if the pattern isn't found.
+          NUM=$(sed -n 's/.*String version[[:space:]]*=[[:space:]]*"\([0-9][0-9.]*\).*/\1/p' LilyGo-EPD-4-7-WeatherAPI-Display-Touch.ino | head -1)
+          if [ -n "$NUM" ]; then
+            VERSION="v$NUM"
+          else
+            VERSION=$(git describe --tags --always)
+          fi
+          echo "manifest version -> $VERSION"
           sed -i "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" docs/manifest.json
 
       - name: Commit firmware to docs folder
