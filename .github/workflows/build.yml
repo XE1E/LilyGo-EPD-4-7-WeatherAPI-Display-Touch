@@ -92,6 +92,22 @@ jobs:
           git diff --staged --quiet || git commit -m "Update firmware binaries [skip ci]"
           git push
 
+      - name: Extract changelog for release
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "Extracting changelog section for version $VERSION"
+          awk -v ver="$VERSION" '
+            $0 ~ "^## \\[" ver "\\]" {flag=1; next}
+            flag && /^## \[/ {exit}
+            flag {print}
+          ' CHANGELOG.md > release_notes.md
+          if [ ! -s release_notes.md ]; then
+            echo "No se encontró una sección en CHANGELOG.md para la versión $VERSION." > release_notes.md
+          fi
+          echo "--- release_notes.md ---"
+          cat release_notes.md
+
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
@@ -100,6 +116,7 @@ jobs:
             ./build/weather-station-firmware.bin
             ./build/bootloader.bin
             ./build/partitions.bin
+          body_path: release_notes.md
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
