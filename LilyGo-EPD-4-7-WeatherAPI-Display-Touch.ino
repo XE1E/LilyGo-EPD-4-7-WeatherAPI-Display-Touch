@@ -1073,49 +1073,34 @@ bool DecodeWeatherAPI(const String& json) {
   Serial.printf("Device Time: %02d:%02d:%02d (TZ: %s, GMT: %d, DST: %d)\n",
     CurrentHour, CurrentMin, CurrentSec, Timezone, gmtOffset_sec, daylightOffset_sec);
 
-  // Check if API timezone likely has DST but device doesn't
-  // WeatherAPI uses IANA timezones which include DST rules
-  // Mexico abolished DST in 2022, but WeatherAPI's database may still apply it
-  String apiTzId = location["tz_id"].as<String>();
-  bool apiMayHaveDST = (apiTzId.indexOf("Mexico") >= 0 || apiTzId.indexOf("America/") >= 0);
-  bool deviceHasNoDST = (daylightOffset_sec == 0);
-
-  // Check if we're in DST months (roughly April-October for North America)
-  // Extract month from API localtime string (format: "2026-04-11 17:36")
-  int apiMonth = apiLocaltime.substring(5, 7).toInt();  // Extract "04" from position 5-6
-  bool inDSTMonths = (apiMonth >= 4 && apiMonth <= 10);  // April (4) to October (10)
-
-  // If API likely applies DST, device doesn't, and we're in DST months,
-  // the astronomy data (sunrise/sunset) will be 1 hour ahead
-  if (apiMayHaveDST && deviceHasNoDST && inDSTMonths) {
-    // Check if the hours actually match (meaning API's "current" time doesn't show DST offset)
-    // but the astronomy calculations still use DST
-    String apiTimeStr = apiLocaltime.substring(apiLocaltime.indexOf(' ') + 1);
-    int apiHour = apiTimeStr.substring(0, apiTimeStr.indexOf(':')).toInt();
-    int hourDiff = apiHour - CurrentHour;
-    if (hourDiff > 12) hourDiff -= 24;
-    if (hourDiff < -12) hourDiff += 24;
-
-    // If current times match but we're in DST months, astronomy data likely has DST applied
-    if (abs(hourDiff) <= 1) {
-      apiTimezoneOffset = 1;  // Astronomy data is 1 hour ahead due to DST
-      Serial.println("DST correction: API astronomy data likely includes DST, device doesn't");
-      Serial.printf("Applying -1 hour offset to sunrise/sunset (apiTz: %s, DST months: yes)\n", apiTzId.c_str());
-    }
-  } else {
-    // Fallback to original hour-based calculation
-    int spacePos = apiLocaltime.indexOf(' ');
-    if (spacePos > 0) {
-      String apiTimeStr = apiLocaltime.substring(spacePos + 1);
-      int colonPos = apiTimeStr.indexOf(':');
-      if (colonPos > 0) {
-        int apiHour = apiTimeStr.substring(0, colonPos).toInt();
-        apiTimezoneOffset = apiHour - CurrentHour;
-        if (apiTimezoneOffset > 12) apiTimezoneOffset -= 24;
-        if (apiTimezoneOffset < -12) apiTimezoneOffset += 24;
-        if (apiTimezoneOffset != 0) {
-          Serial.printf("Timezone offset detected: %d hour(s) - will adjust sunrise/sunset\n", apiTimezoneOffset);
-        }
+  // Timezone offset between the data source and the device clock.
+  //
+  // There used to be a DST heuristic here: for any "America/*" timezone, with no DST
+  // on the device and between April and October, it assumed the source had shifted the
+  // astronomy data one hour forward and subtracted it. That was written when
+  // WeatherAPI still applied DST to Mexico (abolished in 2022). Now that the source
+  // returns the correct time, the workaround was the thing causing the error, and
+  // sunrise/sunset were drawn one hour early for half the year.
+  //
+  // The comparison is done in MINUTES, and only rounds to a whole hour past the 30
+  // minute mark: comparing whole hours meant a fetch straddling the top of the hour
+  // (source stamps "06:59" while the device already reads 07:00) produced a bogus
+  // one hour offset.
+  int spacePos = apiLocaltime.indexOf(' ');
+  if (spacePos > 0) {
+    String apiTimeStr = apiLocaltime.substring(spacePos + 1);
+    int colonPos = apiTimeStr.indexOf(':');
+    if (colonPos > 0) {
+      int apiHour = apiTimeStr.substring(0, colonPos).toInt();
+      int apiMin  = apiTimeStr.substring(colonPos + 1, colonPos + 3).toInt();
+      int diffMin = (apiHour * 60 + apiMin) - (CurrentHour * 60 + CurrentMin);
+      if (diffMin >  720) diffMin -= 1440;   // midnight wrap
+      if (diffMin < -720) diffMin += 1440;
+      apiTimezoneOffset = (diffMin >= 0) ? (diffMin + 30) / 60
+                                         : -((-diffMin + 30) / 60);
+      if (apiTimezoneOffset != 0) {
+        Serial.printf("Timezone offset detected: %d hour(s) (%d min) - will adjust sunrise/sunset\n",
+                      apiTimezoneOffset, diffMin);
       }
     }
   }

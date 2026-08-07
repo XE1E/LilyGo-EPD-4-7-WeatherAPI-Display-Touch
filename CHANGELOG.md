@@ -5,6 +5,12 @@ Todos los cambios notables de este proyecto se documentan en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/)
 y el proyecto sigue un versionado de tipo `MAYOR.MENOR`.
 
+## [No publicado]
+
+### Corregido
+- **Amanecer y atardecer se dibujaban una hora antes de lo real** entre abril y octubre. Había un heurístico que, para cualquier zona horaria `America/*` sin DST en el aparato y dentro de esos meses, daba por hecho que la fuente mandaba la astronomía adelantada una hora y se la restaba. Se escribió cuando WeatherAPI aplicaba DST a México (abolido en 2022); ahora que la fuente devuelve la hora correcta, el parche era el que introducía el error. Afectaba también a la salida y puesta de la luna.
+- El desfase de zona horaria entre la fuente y el aparato ahora se compara en minutos y solo se redondea a hora completa a partir de los 30 minutos. Comparando horas enteras, una consulta que cruzara el cambio de hora (la fuente sella `06:59` cuando el aparato ya marca `07:00`) producía un desfase falso de una hora.
+
 ## [2.9] - 2026-06-26
 
 ### Añadido
