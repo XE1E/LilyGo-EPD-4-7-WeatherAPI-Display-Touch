@@ -68,7 +68,7 @@ bool sdCardAvailable = false;
 #define SCREEN_HEIGHT  EPD_HEIGHT
 
 //################  VERSION  ##################################################
-String version = "2.10 / 4.7in";  // Programme version, see CHANGELOG.md
+String version = "2.11 / 4.7in";  // Programme version, see CHANGELOG.md
 //################ VARIABLES ##################################################
 
 enum alignment {LEFT, RIGHT, CENTER};
