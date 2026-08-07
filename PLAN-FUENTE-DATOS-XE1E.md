@@ -213,15 +213,55 @@ así, conviene medirla (`Response size` ya se imprime, línea 1320).
 
 ---
 
-## Fase 3 — Lo que WeatherAPI nunca pudo dar (opcional, después)
+## Fase 3 — Lo que WeatherAPI nunca pudo dar ✅ HECHA EN PARTE (2026-08-07, v2.12)
 
-Ya con el canal propio abierto:
+Todo lo que cabía en las pantallas que ya existen está **hecho, flasheado y verificado en
+la placa**. Lo que necesita pantallas nuevas se dejó fuera a propósito.
 
-- **Radiación solar** e **IMECA real** en vez del índice EPA estimado.
-- **Lluvia del evento** e intensidad en mm/h.
-- **Sensores CH1‑8** y la **remota GW1100**.
-- **Pantalla de historia con histórico real de InfluxDB** en vez de que el aparato lo
-  acumule en la SD (`weather_history.h`) — el servidor tiene años de dato medido.
+### Hecho
+
+- **IMECA en lugar de ICA** en las tres pantallas donde aparecía (principal, Condiciones
+  actuales y Calidad del aire). La categoría se deriva **en el firmware** de las bandas de
+  la NADF‑009‑AIRE‑2017 (`ImecaCategory()`), no se copia del servidor: así sigue el idioma
+  configurado y el número queda como única fuente de verdad, de modo que servidor y
+  firmware no pueden discrepar. En Calidad del aire se añade el **contaminante dominante**.
+- **Radiación solar**, **lluvia (intensidad + acumulado del episodio)** y **ráfaga máxima
+  del día** en Condiciones actuales.
+- La franja inferior de Condiciones actuales pasa de 5 a **4 columnas**; amanecer y
+  atardecer salen de ahí porque la pantalla **principal** ya los muestra.
+
+### Contrato de maquetación, importante para no romperlo
+
+Hay **dos maquetaciones**, decididas por el `bool XE1E_Present` (verdadero si la respuesta
+traía el bloque `xe1e`):
+
+- Con **servidor propio**: 4 columnas, IMECA, ráfaga máxima.
+- Con **WeatherAPI**: las 5 columnas de siempre, amanecer incluido, ICA y ráfaga del
+  instante. **Intacto a propósito**: esa fuente no tiene estos datos, y dejarle celdas con
+  `--` sería una regresión para quien use la opción por omisión, que es el resto del mundo.
+
+Las cuatro columnas se reparten **dentro de la línea horizontal** (x 50 a 910), no sobre
+los 960 px del panel, y cada texto se dibuja con `drawFitted()`, que lo **mide** con
+`getTextWidthPixels()` y baja de fuente si no cabe. Esto no es adorno: la primera versión
+estimaba los anchos a mano y la celda de lluvia —la única con dos cifras— se salía de la
+pantalla. **No volver a calcular anchos a ojo en esta franja.**
+
+### Unidades
+
+`ApplyUnitSystem(periods, toImperial)` es **bidireccional y con una sola lista de campos**,
+a propósito: las unidades se cambian en caliente desde el portal y hace falta poder volver
+atrás, y dos funciones espejo acabarían con campos distintos. La **presión no se toca ahí**:
+se convierte a inHg en cada sitio que la dibuja, y hacerlo también en la función la
+aplicaría dos veces.
+
+### Pendiente, cada cosa su etapa
+
+- **Sensores de interior, jardín (CH1‑8) y remota GW1100.** Necesitan pantallas nuevas. Los
+  datos ya viajan en el bloque `xe1e` (`temp_indoor`, `humidity_indoor`, `temp_ch1`,
+  `humidity_ch1`), así que esta etapa es solo firmware.
+- **Pantalla de historia con el histórico real de InfluxDB** en vez de lo que el aparato
+  acumula en la SD (`weather_history.h`): años de dato medido al minuto contra una muestra
+  por despertar. Necesita un endpoint nuevo con la forma que esperan las gráficas.
 - Alertas activas, METAR/TAF, sismos.
 
 ---
