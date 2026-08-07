@@ -68,7 +68,7 @@ bool sdCardAvailable = false;
 #define SCREEN_HEIGHT  EPD_HEIGHT
 
 //################  VERSION  ##################################################
-String version = "2.11 / 4.7in";  // Programme version, see CHANGELOG.md
+String version = "2.12 / 4.7in";  // Programme version, see CHANGELOG.md
 //################ VARIABLES ##################################################
 
 enum alignment {LEFT, RIGHT, CENTER};
@@ -200,6 +200,7 @@ void deepCleanDisplay();
 String WindDegToOrdinalDirection(float winddirection);
 String ImecaCategory(int idx);
 void ApplyUnitSystem(int periods, bool toImperial);
+void drawFitted(int x, int y, String text, int maxW);
 String TitleCase(String text);
 String ConvertUnixTime(int unix_time);
 void DrawGraph(int x_pos, int y_pos, int gwidth, int gheight, float Y1Min, float Y1Max, String title, float DataArray[], int readings, boolean auto_scale, boolean barchart_mode, int title_x_offset = 0, int hours_span = 0);
@@ -1640,6 +1641,18 @@ void DisplayPressureSection(int x, int y, float pressure, String slope) {
 // Se deriva aqui en vez de dibujar la cadena que manda el servidor para que el texto
 // siga el idioma configurado en el display: el servidor solo la sabe en espanol. El
 // numero es la unica fuente de verdad, asi que servidor y firmware no pueden discrepar.
+// Dibuja centrado en `x`, bajando a la fuente chica si el texto no cabe en `maxW`.
+//
+// Se MIDE en tiempo de ejecucion en vez de calcular el ancho a mano: los textos de la
+// franja inferior dependen del idioma y del valor --"12.6mm/h 18.4mm" es mucho mas ancho
+// que "5 W/m2"--, y estimarlos a ojo ya hizo que la celda de lluvia se saliera de la
+// pantalla por la izquierda. Deja la fuente en OpenSans12B al salir.
+void drawFitted(int x, int y, String text, int maxW) {
+  if (getTextWidthPixels(text) > maxW) setFont(OpenSans10B);
+  drawString(x, y, text, CENTER);
+  setFont(OpenSans12B);
+}
+
 String ImecaCategory(int idx) {
   if (idx <= 50)  return TXT_IMECA_GOOD;
   if (idx <= 100) return TXT_IMECA_REGULAR;
@@ -1671,7 +1684,8 @@ void DisplayFeelsLike(int x, int y) {
     }
     airText = TXT_AQI + ": " + String(WxConditions[0].AQI) + " - " + aqiDesc;
   }
-  drawString(x + 275, y - 1, airText, LEFT);
+  // y - 4 para que quede a la misma altura optica que la sensacion de la izquierda.
+  drawString(x + 275, y - 4, airText, LEFT);
 }
 
 // Find first forecast index within 1 hour of current time
@@ -3075,22 +3089,32 @@ void DisplayCurrentDetailScreen() {
   airValue.toUpperCase();
 
   if (XE1E_Present) {
-    int rainX = 120, solarX = 360, uvX = 600, airX = 840;
+    // Cuatro celdas repartidas por igual DENTRO de la linea horizontal (x 50 a 910), no
+    // sobre los 960 px del panel: con los centros en 120/360/600/840 la celda de lluvia,
+    // que es la mas ancha porque lleva dos cifras, se salia por la izquierda.
+    const int cellW = (SCREEN_WIDTH - 100) / 4;          // 215 px
+    const int firstX = 50 + cellW / 2;                   // 157
+    int rainX  = firstX;
+    int solarX = firstX + cellW;
+    int uvX    = firstX + cellW * 2;
+    int airX   = firstX + cellW * 3;
+    const int fitW = cellW - 8;                          // deja aire entre celdas
 
     // Intensidad ahora mismo y acumulado del episodio en curso. OJO: el evento puede
     // haber empezado dias antes, asi que puede ser MAYOR que el total de hoy sin que eso
     // sea un error.
     String rainTxt = isnan(XE1E_RainRate) ? "--" : String(XE1E_RainRate, 1) + rainUnit + "/h";
-    if (!isnan(XE1E_RainEvent)) rainTxt += "  " + String(XE1E_RainEvent, 1) + rainUnit;
-    drawString(rainX, valY, rainTxt, CENTER);
-    drawString(solarX, valY, isnan(XE1E_Solar) ? "--" : String(XE1E_Solar, 0) + " W/m2", CENTER);
-    drawString(uvX, valY - 5, String(uv, 1) + uvLevel, CENTER);
-    drawString(airX, valY - 2, airValue, CENTER);
+    if (!isnan(XE1E_RainEvent)) rainTxt += " " + String(XE1E_RainEvent, 1) + rainUnit;
 
-    drawString(rainX, valY + labelOffsetY, TXT_RAIN_EVENT, CENTER);
-    drawString(solarX, valY + labelOffsetY, TXT_SOLAR, CENTER);
-    drawString(uvX, valY + labelOffsetY, TXT_UV_INDEX, CENTER);
-    drawString(airX, valY + labelOffsetY, airLabel, CENTER);
+    drawFitted(rainX, valY, rainTxt, fitW);
+    drawFitted(solarX, valY, isnan(XE1E_Solar) ? "--" : String(XE1E_Solar, 0) + " W/m2", fitW);
+    drawFitted(uvX, valY - 5, String(uv, 1) + uvLevel, fitW);
+    drawFitted(airX, valY - 2, airValue, fitW);
+
+    drawFitted(rainX, valY + labelOffsetY, TXT_RAIN_EVENT, fitW);
+    drawFitted(solarX, valY + labelOffsetY, TXT_SOLAR, fitW);
+    drawFitted(uvX, valY + labelOffsetY, TXT_UV_INDEX, fitW);
+    drawFitted(airX, valY + labelOffsetY, airLabel, fitW);
   } else {
     int sunriseX = 100, sunsetX = 290, rainX = 480, uvX = 670, airX = 860;
 
@@ -3343,7 +3367,9 @@ void DisplayAirQualityScreen() {
   else uvLevel = TXT_UV_EXTREME;
   uvLevel.toUpperCase();
   String uvText = "UV :  " + String(uv, 1) + " - " + uvLevel;
-  drawString(centerX + 175, bottomLineY + 15, uvText, CENTER);
+  // +200 y no +175: el IMECA de la izquierda es mas ancho que el ICA que habia antes
+  // (lleva el numero real y el contaminante dominante) y los dos textos quedaban juntos.
+  drawString(centerX + 200, bottomLineY + 15, uvText, CENTER);
 }
 
 // Calendar screens moved to calendar.h

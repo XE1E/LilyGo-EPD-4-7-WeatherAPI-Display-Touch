@@ -5,6 +5,13 @@ Todos los cambios notables de este proyecto se documentan en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/)
 y el proyecto sigue un versionado de tipo `MAYOR.MENOR`.
 
+## [2.12] - 2026-08-07
+
+### Corregido
+- **La celda de lluvia se salía de la pantalla por la izquierda.** Las cuatro columnas de la franja inferior de Condiciones actuales se reparten ahora dentro de la línea horizontal (x 50 a 910) en vez de sobre los 960 px del panel, y **el texto se mide en el aparato**: si no cabe en su celda, baja de tamaño. Antes los anchos estaban estimados a mano, y el de la celda de lluvia —la única con dos cifras— se quedó corto.
+- El índice UV de la pantalla de Calidad del aire se separa 25 px del IMECA, que es más ancho que el ICA al que sustituye porque lleva el número real y el contaminante dominante.
+- El IMECA de la pantalla principal sube 3 px, a la misma altura óptica que la sensación térmica.
+
 ## [2.11] - 2026-08-07
 
 ### Añadido
@@ -58,6 +65,7 @@ y el proyecto sigue un versionado de tipo `MAYOR.MENOR`.
 - Primera versión etiquetada y publicada con compilación automática de firmware (CI) y Web Flasher.
 - Estación meteorológica para LilyGo EPD 4.7" con navegación táctil, integración con WeatherAPI.com, soporte multi-WiFi, portal cautivo en modo AP, historial de datos y deep sleep para operación con batería.
 
+[2.12]: https://github.com/XE1E/LilyGo-EPD-4-7-WeatherAPI-Display-Touch/releases/tag/v2.12
 [2.11]: https://github.com/XE1E/LilyGo-EPD-4-7-WeatherAPI-Display-Touch/releases/tag/v2.11
 [2.10]: https://github.com/XE1E/LilyGo-EPD-4-7-WeatherAPI-Display-Touch/releases/tag/v2.10
 [2.9]: https://github.com/XE1E/LilyGo-EPD-4-7-WeatherAPI-Display-Touch/releases/tag/v2.9
