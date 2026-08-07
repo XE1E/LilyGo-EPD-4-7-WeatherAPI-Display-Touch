@@ -54,6 +54,13 @@ struct ConfigData {
   char wifi_password3[65];
   char api_key[65];
   char groq_apikey[65];     // Groq API key for AI narrative
+  // Fuente de datos: 0 = WeatherAPI.com, 1 = servidor propio (`server_host`).
+  //
+  // Antes el host era una constante de compilacion, asi que apuntar el display a otro
+  // sitio obligaba a recompilar y reflashear. Con estos dos campos la fuente es
+  // configuracion, no codigo, y el mismo binario sirve para los dos casos.
+  int  data_source;
+  char server_host[64];
   int forecast_days;        // 3 or 5 days forecast
   char city[33];
   char latitude[16];
@@ -386,6 +393,27 @@ const char CONFIG_PAGE[] PROGMEM = R"rawliteral(
       <!-- Weather Tab -->
       <div id="weather" class="panel">
         <div class="card">
+          <div class="card-title">Fuente de datos</div>
+          <div class="form-group">
+            <label>De donde bajar el clima</label>
+            <select name="data_source" id="data_source" onchange="toggleSource()">
+              <option value="0" %SRC_API_SEL%>WeatherAPI.com</option>
+              <option value="1" %SRC_OWN_SEL%>Mi propio servidor</option>
+            </select>
+            <div class="hint">WeatherAPI da el pronostico de tu ciudad. Tu servidor da las medidas reales de tu estacion.</div>
+          </div>
+          <div class="form-group" id="host-group">
+            <label>Host del servidor</label>
+            <div class="input-with-btn">
+              <input type="text" name="server_host" id="server_host" value="%SERVERHOST%" placeholder="clima.tudominio.net" maxlength="63">
+              <button type="button" class="btn-test" onclick="testServer(this)">Probar</button>
+            </div>
+            <div class="test-result" id="server-result"></div>
+            <div class="hint">Solo el host, sin https:// ni ruta. Debe servir /api/epaper/forecast.json por HTTPS.</div>
+          </div>
+        </div>
+
+        <div class="card">
           <div class="card-title">WeatherAPI</div>
           <div class="form-group">
             <label>API Key</label>
@@ -652,6 +680,59 @@ const char CONFIG_PAGE[] PROGMEM = R"rawliteral(
       el.className = 'test-result show ' + type;
       el.textContent = message;
     }
+
+    // El campo del host solo estorba si la fuente es WeatherAPI.
+    function toggleSource() {
+      const propio = document.getElementById('data_source').value === '1';
+      document.getElementById('host-group').style.display = propio ? '' : 'none';
+    }
+
+    // Prueba del servidor propio. Va aparte de testAPI() porque no comprueba lo mismo:
+    // alli se valida una API key, aqui que el host responda el JSON del display.
+    async function testServer(btn) {
+      const host = document.getElementById('server_host').value.trim();
+      const resultEl = document.getElementById('server-result');
+
+      if (!host) {
+        showResult(resultEl, 'error', 'Escribe el host de tu servidor');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.classList.remove('success', 'error');
+      btn.classList.add('testing');
+      btn.textContent = 'Probando...';
+      resultEl.classList.remove('show');
+
+      try {
+        const response = await fetch('/test-api?src=1&host=' + encodeURIComponent(host));
+        const data = await response.json();
+
+        btn.classList.remove('testing');
+        if (data.success) {
+          btn.classList.add('success');
+          btn.textContent = '✓ OK';
+          showResult(resultEl, 'success', data.location || 'Servidor OK');
+        } else {
+          btn.classList.add('error');
+          btn.textContent = '✗ Error';
+          showResult(resultEl, 'error', data.message || 'El servidor no respondio');
+        }
+      } catch (e) {
+        btn.classList.remove('testing');
+        btn.classList.add('error');
+        btn.textContent = '✗ Error';
+        showResult(resultEl, 'error', 'Error de conexion');
+      }
+
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.classList.remove('success', 'error');
+        btn.textContent = 'Probar';
+      }, 5000);
+    }
+
+    toggleSource();
   </script>
 </body>
 </html>
@@ -1206,6 +1287,15 @@ void loadConfig() {
     strlcpy(config.groq_apikey, groq_apikey.c_str(), sizeof(config.groq_apikey));
   }
 
+  config.data_source = preferences.getInt("datasrc", 0);
+
+  String savedHost = preferences.getString("srvhost", "");
+  if (savedHost.length() > 0) {
+    strlcpy(config.server_host, savedHost.c_str(), sizeof(config.server_host));
+  } else {
+    strlcpy(config.server_host, defaultServerHost, sizeof(config.server_host));
+  }
+
   config.forecast_days = preferences.getInt("fcdays", 3);
 
   String savedCity = preferences.getString("city", "");
@@ -1287,6 +1377,15 @@ void loadConfig() {
   if (config.sleep_hour > 23) config.sleep_hour = 23;
   if (config.narrative_style < 0) config.narrative_style = 0;
   if (config.narrative_style > 5) config.narrative_style = 5;
+
+  // Si la fuente es "servidor propio" pero no hay host, se vuelve a WeatherAPI.com.
+  // Sin esta red, elegir la fuente y olvidar el host dejaria al display sin ningun
+  // sitio de donde bajar el clima, y habria que rescatarlo entrando al portal.
+  if (config.data_source != 1) config.data_source = 0;
+  if (config.data_source == 1 && strlen(config.server_host) == 0) {
+    Serial.println("Fuente 'servidor propio' sin host: se usa WeatherAPI.com");
+    config.data_source = 0;
+  }
 }
 
 // Save configuration to preferences
@@ -1301,6 +1400,8 @@ void saveConfig() {
   preferences.putString("pass3", config.wifi_password3);
   preferences.putString("apikey", config.api_key);
   preferences.putString("groqkey", config.groq_apikey);
+  preferences.putInt("datasrc", config.data_source);
+  preferences.putString("srvhost", config.server_host);
   preferences.putInt("fcdays", config.forecast_days);
   preferences.putString("city", config.city);
   preferences.putString("lat", config.latitude);
@@ -1372,6 +1473,9 @@ String processTemplate(const char* page) {
   html.replace("%PASS3%", config.wifi_password3);
   html.replace("%APIKEY%", config.api_key);
   html.replace("%GROQKEY%", config.groq_apikey);
+  html.replace("%SRC_API_SEL%", config.data_source == 0 ? "selected" : "");
+  html.replace("%SRC_OWN_SEL%", config.data_source == 1 ? "selected" : "");
+  html.replace("%SERVERHOST%", config.server_host);
   html.replace("%FORECAST3_SEL%", config.forecast_days == 3 ? "selected" : "");
   html.replace("%FORECAST5_SEL%", config.forecast_days == 5 ? "selected" : "");
   html.replace("%CITY%", config.city);
@@ -1543,8 +1647,82 @@ void handleTestWiFi() {
 }
 
 // Test WeatherAPI key by making a simple request
+// Comprueba que un servidor propio sirva el JSON que espera el display.
+//
+// No se extrae el nombre de la ubicacion como en la prueba de WeatherAPI: la respuesta
+// son ~23 KB y llega troceada, asi que se mira solo el principio --cabecera HTTP y las
+// primeras claves del JSON--, que es lo que de verdad hace falta para decir si el host
+// esta bien puesto.
+void handleTestOwnServer() {
+  String host = webServer.arg("host");
+  host.trim();
+
+  if (host.length() == 0) {
+    webServer.send(200, "application/json", "{\"success\":false,\"message\":\"Falta el host\"}");
+    return;
+  }
+
+  if (currentAPModeType != AP_NONE) {
+    webServer.send(200, "application/json", "{\"success\":false,\"message\":\"Sin conexion a internet en modo AP\"}");
+    return;
+  }
+
+  Serial.println("Prueba de servidor propio: " + host);
+
+  WiFiClientSecure client;
+  client.setInsecure();
+
+  if (!client.connect(host.c_str(), 443)) {
+    webServer.send(200, "application/json", "{\"success\":false,\"message\":\"No se pudo conectar al servidor\"}");
+    return;
+  }
+
+  client.println("GET " + String(OWN_SERVER_PATH) + " HTTP/1.1");
+  client.println("Host: " + host);
+  client.println("Connection: close");
+  client.println();
+
+  unsigned long timeout = millis();
+  while (client.connected() && !client.available()) {
+    if (millis() - timeout > 10000) {
+      client.stop();
+      webServer.send(200, "application/json", "{\"success\":false,\"message\":\"Timeout de conexion\"}");
+      return;
+    }
+    delay(10);
+  }
+
+  String head = "";
+  while (client.available() && head.length() < 2048) {
+    head += client.readStringUntil('\n');
+    head += "\n";
+  }
+  client.stop();
+
+  if (head.indexOf("200 OK") > 0 && head.indexOf("\"location\"") > 0) {
+    webServer.send(200, "application/json", "{\"success\":true,\"location\":\"Servidor OK, sirviendo datos\"}");
+    Serial.println("Prueba de servidor propio: OK");
+  } else if (head.indexOf(" 404") > 0) {
+    webServer.send(200, "application/json",
+                   "{\"success\":false,\"message\":\"Responde, pero no sirve /api/epaper/forecast.json\"}");
+    Serial.println("Prueba de servidor propio: 404");
+  } else {
+    webServer.send(200, "application/json",
+                   "{\"success\":false,\"message\":\"Respuesta inesperada del servidor\"}");
+    Serial.println("Prueba de servidor propio: respuesta inesperada");
+  }
+}
+
 void handleTestAPI() {
   lastWebRequestTime = millis();
+
+  // La prueba depende de la fuente: con servidor propio la API key no se usa para nada,
+  // asi que validarla daria un error que no viene al caso.
+  if (webServer.arg("src") == "1") {
+    handleTestOwnServer();
+    return;
+  }
+
   String apiKey = webServer.arg("key");
 
   if (apiKey.length() == 0 || apiKey.indexOf("YOUR_") >= 0) {
@@ -1629,6 +1807,8 @@ void parseFormToConfig() {
   strlcpy(config.wifi_password3, webServer.arg("pass3").c_str(), sizeof(config.wifi_password3));
   strlcpy(config.api_key, webServer.arg("apikey").c_str(), sizeof(config.api_key));
   strlcpy(config.groq_apikey, webServer.arg("groqkey").c_str(), sizeof(config.groq_apikey));
+  config.data_source = webServer.arg("data_source").toInt();
+  strlcpy(config.server_host, webServer.arg("server_host").c_str(), sizeof(config.server_host));
   config.forecast_days = webServer.arg("forecast_days").toInt();
   strlcpy(config.city, webServer.arg("city").c_str(), sizeof(config.city));
   strlcpy(config.latitude, webServer.arg("lat").c_str(), sizeof(config.latitude));

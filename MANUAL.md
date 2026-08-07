@@ -1276,6 +1276,51 @@ Parametros:
 | 13d | 13n | Nieve | Nieve |
 | 50d | 50n | Niebla | Neblina/Niebla |
 
+### 8.5 Usar tu propio servidor en vez de WeatherAPI
+
+Si tienes una estacion meteorologica con un servidor propio, el display puede beber de
+ella. La diferencia no es pequena: WeatherAPI te da el **modelo** para tu ciudad, mientras
+que tu estacion te da la **medida real de tu jardin**.
+
+**Como se configura** (pestana *Clima* de la pagina de configuracion):
+
+1. En **Fuente de datos**, elegir *Mi propio servidor*.
+2. Escribir el **host** en el campo que aparece: solo el nombre, sin `https://` ni ruta.
+   Por ejemplo `clima.tudominio.net`.
+3. Pulsar **Probar** para comprobar que el servidor responde lo que el display espera.
+4. Guardar.
+
+Por omision la fuente es WeatherAPI.com, asi que si no tocas nada el display sigue
+funcionando igual que siempre. La API key de WeatherAPI puede quedarse guardada: cambiar
+la fuente de vuelta no exige volver a escribirla.
+
+**Que tiene que servir tu servidor**
+
+Una peticion HTTPS a `/api/epaper/forecast.json` que devuelva un JSON con la misma forma
+que `forecast.json` de WeatherAPI (seccion 8.3), es decir `location`, `current` y
+`forecast.forecastday[]` con tres dias. Asi el display no necesita un parser distinto y
+puedes volver a WeatherAPI en cualquier momento sin reflashear.
+
+Detalles que importan si vas a escribir tu propio servidor:
+
+- **Manda las 24 horas de cada dia**, empezando a las 00:00 locales. El display muestrea
+  cada 3 horas por su cuenta; si le mandas menos horas, las graficas se desalinean.
+- **La astronomia en `astro`, en formato `"HH:MM"` de 24 horas.** Las fases de la luna, en
+  cambio, van con el nombre **en ingles** (`Waxing Crescent`, `Full Moon`...): el display
+  las traduce el mismo al idioma configurado.
+- **No devuelvas error si te falta un dato.** El display despierta, pide una vez y se
+  vuelve a dormir, asi que un fallo lo deja con la pantalla vieja hasta el siguiente ciclo.
+  Es mejor servir lo que tengas.
+- El JSON debe caber en 64 KB. Para referencia, la implementacion de abajo ronda los 23 KB.
+
+**Implementacion de referencia:** [ecowitt-weather-server-xe1e](https://github.com/XE1E/ecowitt-weather-server-xe1e),
+un servidor para estaciones Ecowitt (FastAPI + InfluxDB) que ya expone ese endpoint.
+
+**Extras.** Si el JSON incluye un bloque `xe1e`, el display aprovecha lo que WeatherAPI no
+puede darle. Ahora mismo usa `pressure_trend_3h`, la variacion barometrica **medida** de
+las ultimas 3 horas, para dibujar la tendencia; con WeatherAPI esa flecha sale de restar
+dos puntos del pronostico, que es lo que se espera y no lo que esta pasando.
+
 ---
 
 ## 9. Gestion de Energia

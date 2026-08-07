@@ -841,6 +841,52 @@ Parameters:
   cnt=40  (8 readings/day x 3 days)
 ```
 
+### 8.5 Using your own server instead of WeatherAPI
+
+If you run a weather station with its own server, the display can drink from it. The
+difference is not small: WeatherAPI gives you the **model** for your city, while your
+station gives you the **actual measurement from your own garden**.
+
+**How to configure it** (*Weather* tab of the configuration page):
+
+1. Under **Data source**, pick *My own server*.
+2. Type the **host** in the field that appears: just the name, no `https://` and no path.
+   For example `weather.yourdomain.net`.
+3. Press **Test** to check the server answers what the display expects.
+4. Save.
+
+The default source is WeatherAPI.com, so if you change nothing the display keeps working
+exactly as before. Your WeatherAPI key can stay stored: switching the source back does not
+require typing it again.
+
+**What your server has to serve**
+
+An HTTPS request to `/api/epaper/forecast.json` returning JSON with the same shape as
+WeatherAPI's `forecast.json` (section 8.3), that is `location`, `current` and
+`forecast.forecastday[]` with three days. That way the display needs no separate parser and
+you can switch back to WeatherAPI at any time without reflashing.
+
+Details that matter if you are going to write your own server:
+
+- **Send all 24 hours of each day**, starting at 00:00 local time. The display samples
+  every 3 hours on its own; send it fewer hours and the graphs get misaligned.
+- **Astronomy goes in `astro`, in 24-hour `"HH:MM"` format.** Moon phases, however, use the
+  **English** names (`Waxing Crescent`, `Full Moon`...): the display translates them itself
+  into the configured language.
+- **Do not return an error when a value is missing.** The display wakes up, asks once and
+  goes back to sleep, so a failure leaves it showing the old screen until the next cycle.
+  Better to serve whatever you have.
+- The JSON must fit in 64 KB. For reference, the implementation below is around 23 KB.
+
+**Reference implementation:** [ecowitt-weather-server-xe1e](https://github.com/XE1E/ecowitt-weather-server-xe1e),
+a server for Ecowitt stations (FastAPI + InfluxDB) that already exposes that endpoint.
+
+**Extras.** If the JSON includes an `xe1e` block, the display takes advantage of what
+WeatherAPI cannot give it. Right now it uses `pressure_trend_3h`, the **measured**
+barometric change over the last 3 hours, to draw the trend; with WeatherAPI that arrow
+comes from subtracting two forecast points, which is what is expected rather than what is
+actually happening.
+
 ---
 
 ## 9. Power Management

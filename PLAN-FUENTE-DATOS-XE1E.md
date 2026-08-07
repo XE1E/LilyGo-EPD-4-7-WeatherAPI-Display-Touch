@@ -161,7 +161,27 @@ Publicar en Caddy/nginx como el resto de `/api/*`.
 
 ---
 
-## Fase 2 — Firmware: la fuente como opción
+## Fase 2 — Firmware: la fuente como opción ✅ HECHO (2026-08-07, v2.10)
+
+Implementado y compilado (72 % de flash, +6,3 KB frente a la 2.9). `ConfigData` tiene
+`data_source` y `server_host`, el portal tiene su tarjeta *Fuente de datos* con botón
+**Probar** propio, y `obtainWeatherData()` elige host y ruta según la fuente.
+
+**Desviación del plan, a propósito:** no hay una función `DecodeXE1E()` aparte. El bloque
+`xe1e{}` se lee **dentro de `DecodeWeatherAPI()`**, guardado por `root.containsKey("xe1e")`.
+Una función separada habría exigido o duplicar 200 líneas de parseo o crear un segundo
+`DynamicJsonDocument` de 64 KB, y no hay PSRAM que regalar por un par de campos. Con
+WeatherAPI el bloque no existe, así que el comportamiento es idéntico al de siempre.
+
+**Red de seguridad añadida:** si se elige "servidor propio" y el host está vacío, se vuelve
+a WeatherAPI en `loadConfig()`. Sin eso, guardar la fuente y olvidar el host dejaba al
+display sin ninguna fuente y había que rescatarlo desde el portal.
+
+**Ojo al configurar por HTTP:** `parseFormToConfig()` sobrescribe **todos** los campos con
+lo que traiga el formulario, así que un POST a `/save` incompleto borra las credenciales
+WiFi. La fuente se cambia desde el navegador, no con un POST a mano.
+
+### Diseño
 
 1. **Campos nuevos en `ConfigData`** (`wifi_manager.h:48‑74`), que hoy **no tiene ninguno
    de servidor**: `data_source` (0 = WeatherAPI.com, 1 = servidor propio) y `server_host`.

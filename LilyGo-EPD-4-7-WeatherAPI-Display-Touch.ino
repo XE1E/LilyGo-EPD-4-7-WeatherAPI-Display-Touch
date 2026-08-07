@@ -68,7 +68,7 @@ bool sdCardAvailable = false;
 #define SCREEN_HEIGHT  EPD_HEIGHT
 
 //################  VERSION  ##################################################
-String version = "2.9 / 4.7in";  // Programme version, see CHANGELOG.md
+String version = "2.10 / 4.7in";  // Programme version, see CHANGELOG.md
 //################ VARIABLES ##################################################
 
 enum alignment {LEFT, RIGHT, CENTER};
@@ -1227,6 +1227,27 @@ bool DecodeWeatherAPI(const String& json) {
     if (pressure_trend == 0) WxConditions[0].Trend = "0";
   }
 
+  // Extras del servidor propio. El bloque `xe1e` solo existe si la fuente es un servidor
+  // propio, asi que con WeatherAPI nada de esto se ejecuta y el comportamiento es el de
+  // siempre. Se lee aqui, dentro del mismo documento, y no en una funcion aparte: un
+  // segundo parseo significaria otro DynamicJsonDocument de 64 KB, y no hay PSRAM que
+  // regalar por un par de campos.
+  if (root.containsKey("xe1e")) {
+    JsonObject x = root["xe1e"];
+    Serial.println("Fuente: servidor propio (" + x["source"].as<String>() + ")");
+
+    // Tendencia barometrica REAL de las ultimas 3 horas, medida por la estacion. Le gana
+    // a la de arriba, que resta dos puntos PRONOSTICADOS y por tanto describe lo que se
+    // espera, no lo que esta pasando. Banda muerta de 0.1 hPa para que el ruido de la
+    // medida no haga bailar la flecha.
+    if (!x["pressure_trend_3h"].isNull()) {
+      float t = x["pressure_trend_3h"].as<float>();
+      WxConditions[0].Trend = (t > 0.1) ? "+" : ((t < -0.1) ? "-" : "0");
+      Serial.printf("Tendencia de presion real (3h): %+.1f hPa -> %s\n",
+                    t, WxConditions[0].Trend.c_str());
+    }
+  }
+
   if (Units == "I") Convert_Readings_to_Imperial();
 
   Serial.printf("Parsed %d forecast periods\n", forecastIdx);
@@ -1272,31 +1293,42 @@ String ConvertUnixTime(int unix_time) {
   return output;
 }
 
-// Fetch all weather data from WeatherAPI (current + forecast + AQI in one call)
+// Fetch all weather data in one call: from WeatherAPI, or from your own server if
+// `data_source` says so. Both speak the same JSON shape, so the parser is shared.
 bool obtainWeatherData(WiFiClientSecure & client) {
   client.stop();
   HTTPClient http;
 
-  // Determine location query: use Location ID if configured, otherwise coordinates
-  String locationQuery;
-  if (strlen(config.location_id) > 0) {
-    locationQuery = "id:" + String(config.location_id);
-    Serial.println("Using Location ID: " + locationQuery);
+  // Own server: host and path come from the config, and neither the API key nor the
+  // location query are needed -- the server already knows where its station is.
+  bool ownServer = (config.data_source == 1 && strlen(config.server_host) > 0);
+  const char* dataHost = ownServer ? config.server_host : server;
+
+  String uri;
+  if (ownServer) {
+    uri = OWN_SERVER_PATH;
   } else {
-    locationQuery = Latitude + "," + Longitude;
-    Serial.println("Using coordinates: " + locationQuery);
+    // Determine location query: use Location ID if configured, otherwise coordinates
+    String locationQuery;
+    if (strlen(config.location_id) > 0) {
+      locationQuery = "id:" + String(config.location_id);
+      Serial.println("Using Location ID: " + locationQuery);
+    } else {
+      locationQuery = Latitude + "," + Longitude;
+      Serial.println("Using coordinates: " + locationQuery);
+    }
+
+    // WeatherAPI endpoint - all data in one call
+    uri = "/v1/forecast.json?key=" + apikey +
+          "&q=" + locationQuery +
+          "&days=3&aqi=yes&alerts=no&lang=" + Language;
   }
 
-  // WeatherAPI endpoint - all data in one call
-  String uri = "/v1/forecast.json?key=" + apikey +
-               "&q=" + locationQuery +
-               "&days=3&aqi=yes&alerts=no&lang=" + Language;
+  Serial.println("Fetching: https://" + String(dataHost) + uri);
 
-  Serial.println("Fetching: https://" + String(server) + uri);
-
-  // WeatherAPI requires HTTPS
+  // Both sources are served over HTTPS
   client.setInsecure();  // Skip certificate verification (for simplicity)
-  http.begin(client, server, 443, uri, true);  // port 443, HTTPS = true
+  http.begin(client, dataHost, 443, uri, true);  // port 443, HTTPS = true
   int httpCode = http.GET();
 
   if (httpCode == HTTP_CODE_OK) {
@@ -1317,8 +1349,10 @@ bool obtainWeatherData(WiFiClientSecure & client) {
     client.stop();
     http.end();
 
-    // If Location ID was used and failed, try fallback to coordinates
-    if (strlen(config.location_id) > 0) {
+    // If Location ID was used and failed, try fallback to coordinates.
+    // Only applies to WeatherAPI: the own-server path takes no location query, so
+    // retrying it with coordinates would just repeat the very same failed request.
+    if (!ownServer && strlen(config.location_id) > 0) {
       Serial.println("Location ID failed, trying coordinates fallback...");
       String fallbackUri = "/v1/forecast.json?key=" + apikey +
                    "&q=" + Latitude + "," + Longitude +

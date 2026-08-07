@@ -29,6 +29,28 @@ const int wifiNetworkCount = sizeof(wifiNetworks) / sizeof(wifiNetworks[0]);
 String apikey       = "YOUR_WEATHERAPI_KEY";
 const char server[] = "api.weatherapi.com";
 
+// ---------------------------------------------------------------------------
+// Fuente de datos alternativa: TU PROPIO SERVIDOR en vez de WeatherAPI.com
+//
+// Si tienes una estacion meteorologica con un servidor que exponga los datos,
+// el display puede beber de ella y mostrar medidas REALES de tu jardin en vez
+// del modelo de una API para tu ciudad.
+//
+// El servidor debe responder en `/api/epaper/forecast.json` con la misma forma
+// que WeatherAPI `forecast.json`. Implementacion de referencia (Ecowitt +
+// InfluxDB + FastAPI): https://github.com/XE1E/ecowitt-weather-server-xe1e
+//
+// Se elige desde la pagina de configuracion (pestana Clima), no aqui: por
+// omision el display sigue usando WeatherAPI.com y no cambia nada.
+// Este valor solo rellena el campo la primera vez, p. ej. "clima.tudominio.net".
+// ---------------------------------------------------------------------------
+const char defaultServerHost[] = "";
+
+// Ruta que se pide al servidor propio. Una sola constante para que la descarga real y
+// el boton "Probar" de la pagina de configuracion no puedan acabar apuntando a rutas
+// distintas.
+#define OWN_SERVER_PATH "/api/epaper/forecast.json"
+
 // Groq API key for weather narrative generation (free tier)
 // Get key at: console.groq.com
 String groq_apikey = "YOUR_GROQ_API_KEY";
