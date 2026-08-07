@@ -1450,7 +1450,15 @@ bool isPlaceholder(const char* value) {
 
 // Check if configuration exists and is valid (not placeholders)
 bool hasValidConfig() {
-  return !isPlaceholder(config.wifi_ssid) && !isPlaceholder(config.api_key);
+  // Que la fuente este utilizable depende de CUAL sea: con servidor propio la clave de
+  // WeatherAPI no se usa para nada, asi que seguir exigiendola mandaria al modo de
+  // configuracion inicial a quien tenga su servidor perfectamente puesto y no quiera
+  // una cuenta en WeatherAPI. Para entonces loadConfig() ya garantizo que si
+  // data_source es 1 el host no esta vacio.
+  bool sourceUsable = (config.data_source == 1)
+                        ? (strlen(config.server_host) > 0)
+                        : !isPlaceholder(config.api_key);
+  return !isPlaceholder(config.wifi_ssid) && sourceUsable;
 }
 
 // Check if this is first boot (no real config ever saved)
