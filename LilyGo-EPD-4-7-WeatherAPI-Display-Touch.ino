@@ -89,6 +89,28 @@ boolean SmallIcon   = false;
 #define Large  20           // For icon drawing
 #define XLarge 25           // Extra large for secondary screen
 int iconScaleOverride = 0;  // 0 = use default, >0 = use this scale
+
+// Extras que solo llegan de un servidor propio (bloque `xe1e` del JSON). Con
+// WeatherAPI se quedan en "no disponible" y la pantalla dibuja lo de siempre, asi que
+// no hay dos versiones del dibujado: hay un dato mas, o no lo hay.
+//
+// El deep sleep reinicia el ESP32 en cada ciclo, asi que estos valores se reinicializan
+// solos en cada despertar y no pueden quedarse pegados de una descarga anterior.
+// Cuantas entradas de WxForecast[] trajo la ultima descarga. Hace falta fuera del parser
+// para poder reconvertir las unidades si se cambian desde el portal sin reiniciar.
+int    ForecastPeriods = 0;
+
+// Verdadero si la respuesta traia el bloque `xe1e`, es decir si la fuente es un servidor
+// propio. Decide la maquetacion: con WeatherAPI las pantallas se dibujan EXACTAMENTE como
+// siempre --amanecer y atardecer incluidos-- porque no tiene estos datos y sustituirlos
+// por celdas con "--" seria una regresion para quien use la fuente por omision.
+bool   XE1E_Present = false;
+int    XE1E_Imeca = -1;             // indice IMECA (0-500); -1 = no disponible
+String XE1E_ImecaDominant = "";     // contaminante dominante, p. ej. "O3"
+float  XE1E_Solar = NAN;            // radiacion solar, W/m2
+float  XE1E_RainRate = NAN;         // intensidad de lluvia, mm/h
+float  XE1E_RainEvent = NAN;        // acumulado del evento de lluvia en curso, mm
+float  XE1E_GustMaxDaily = NAN;     // rafaga maxima del dia, km/h
 String  Time_str = "--:--:--";
 String  Date_str = "-- --- ----";
 // Last successful weather update (survives deep sleep)
@@ -176,6 +198,8 @@ void DisplayWeather();
 void DisplayConditionsSection(int x, int y, String IconName, bool IconSize);
 void deepCleanDisplay();
 String WindDegToOrdinalDirection(float winddirection);
+String ImecaCategory(int idx);
+void ApplyUnitSystem(int periods, bool toImperial);
 String TitleCase(String text);
 String ConvertUnixTime(int unix_time);
 void DrawGraph(int x_pos, int y_pos, int gwidth, int gheight, float Y1Min, float Y1Max, String title, float DataArray[], int readings, boolean auto_scale, boolean barchart_mode, int title_x_offset = 0, int hours_span = 0);
@@ -795,6 +819,10 @@ bool applyImmediateSettings() {
   // Units - can change immediately
   if (strlen(config.units) > 0 && Units != String(config.units)) {
     Units = String(config.units);
+    // Los datos en memoria estan en las unidades ANTERIORES. Si solo se cambiara la
+    // etiqueta, la pantalla mostraria grados Celsius rotulados "°F" hasta la siguiente
+    // descarga, que puede tardar media hora: hay que reconvertir lo que ya tenemos.
+    ApplyUnitSystem(ForecastPeriods, Units == "I");
     needsRefresh = true;
   }
 
@@ -1034,10 +1062,54 @@ void setup() {
   BeginSleep();
 }
 
-void Convert_Readings_to_Imperial() {
-  // Pressure stays in mb/hPa for both unit systems (no conversion needed)
-  WxForecast[0].Rainfall = mm_to_inches(WxForecast[0].Rainfall);
-  WxConditions[0].DailyRainfall = mm_to_inches(WxConditions[0].DailyRainfall);
+// Conversiones en las dos direcciones. `toI` = hacia imperial; false = hacia metrico.
+float convTemp(float v, bool toI) { return toI ? (v * 9.0 / 5.0 + 32.0) : ((v - 32.0) * 5.0 / 9.0); }
+float convWind(float v, bool toI) { return toI ? (v * 0.621371) : (v / 0.621371); }
+float convRain(float v, bool toI) { return toI ? (v / 25.4) : (v * 25.4); }
+
+// Pasa TODAS las lecturas al sistema de unidades indicado, en un solo sitio. Asi el
+// dibujado no tiene que saber de conversiones: elige la etiqueta y pinta el numero.
+//
+// Antes esto solo convertia la lluvia, asi que en modo imperial la pantalla mostraba
+// grados Celsius rotulados "°F" y kilometros por hora rotulados "mph". No se nota si usas
+// metrico, y por eso duro tanto.
+//
+// Es BIDIRECCIONAL y con una sola lista de campos a proposito: las unidades se pueden
+// cambiar desde el portal sin reiniciar, asi que hace falta poder volver atras, y tener
+// dos funciones espejo garantizaria que algun dia una tenga un campo que la otra no.
+//
+// La PRESION se queda en mb: su conversion a inHg la hacen los sitios que la dibujan
+// (`* HPA_TO_INHG`), y tocarla aqui la aplicaria dos veces.
+//
+// `periods` es cuantas entradas de WxForecast[] se llenaron de verdad. Recorrer el array
+// entero convertiria ceros en 32 °F y las graficas dibujarian una linea plana falsa
+// despues del ultimo dato real.
+void ApplyUnitSystem(int periods, bool toImperial) {
+  bool i2 = toImperial;
+  WxConditions[0].Temperature   = convTemp(WxConditions[0].Temperature, i2);
+  WxConditions[0].Feelslike     = convTemp(WxConditions[0].Feelslike, i2);
+  WxConditions[0].Dewpoint      = convTemp(WxConditions[0].Dewpoint, i2);
+  WxConditions[0].High          = convTemp(WxConditions[0].High, i2);
+  WxConditions[0].Low           = convTemp(WxConditions[0].Low, i2);
+  WxConditions[0].Windspeed     = convWind(WxConditions[0].Windspeed, i2);
+  WxConditions[0].Gust          = convWind(WxConditions[0].Gust, i2);
+  WxConditions[0].Rainfall      = convRain(WxConditions[0].Rainfall, i2);
+  WxConditions[0].DailyRainfall = convRain(WxConditions[0].DailyRainfall, i2);
+
+  for (int i = 0; i < periods && i < max_readings; i++) {
+    WxForecast[i].Temperature = convTemp(WxForecast[i].Temperature, i2);
+    WxForecast[i].Feelslike   = convTemp(WxForecast[i].Feelslike, i2);
+    WxForecast[i].High        = convTemp(WxForecast[i].High, i2);
+    WxForecast[i].Low         = convTemp(WxForecast[i].Low, i2);
+    WxForecast[i].Windspeed   = convWind(WxForecast[i].Windspeed, i2);
+    WxForecast[i].Rainfall    = convRain(WxForecast[i].Rainfall, i2);
+    WxForecast[i].Snowfall    = convRain(WxForecast[i].Snowfall, i2);
+  }
+
+  // Extras del servidor propio, con el mismo criterio.
+  if (!isnan(XE1E_RainRate))     XE1E_RainRate = convRain(XE1E_RainRate, i2);
+  if (!isnan(XE1E_RainEvent))    XE1E_RainEvent = convRain(XE1E_RainEvent, i2);
+  if (!isnan(XE1E_GustMaxDaily)) XE1E_GustMaxDaily = convWind(XE1E_GustMaxDaily, i2);
 }
 
 // Decode WeatherAPI JSON response (all data in one response)
@@ -1234,6 +1306,7 @@ bool DecodeWeatherAPI(const String& json) {
   // regalar por un par de campos.
   if (root.containsKey("xe1e")) {
     JsonObject x = root["xe1e"];
+    XE1E_Present = true;
     Serial.println("Fuente: servidor propio (" + x["source"].as<String>() + ")");
 
     // Tendencia barometrica REAL de las ultimas 3 horas, medida por la estacion. Le gana
@@ -1246,9 +1319,23 @@ bool DecodeWeatherAPI(const String& json) {
       Serial.printf("Tendencia de presion real (3h): %+.1f hPa -> %s\n",
                     t, WxConditions[0].Trend.c_str());
     }
+
+    // Medidas que WeatherAPI no tiene de ninguna forma. Se guardan aparte de
+    // WxConditions para no tocar la struct que usa todo el dibujado.
+    if (!x["imeca"].isNull())               XE1E_Imeca = x["imeca"].as<int>();
+    if (!x["imeca_dominante"].isNull())     XE1E_ImecaDominant = x["imeca_dominante"].as<String>();
+    if (!x["solar_radiation"].isNull())     XE1E_Solar = x["solar_radiation"].as<float>();
+    if (!x["rain_rate_mm"].isNull())        XE1E_RainRate = x["rain_rate_mm"].as<float>();
+    if (!x["rain_event_mm"].isNull())       XE1E_RainEvent = x["rain_event_mm"].as<float>();
+    if (!x["wind_gust_max_daily"].isNull()) XE1E_GustMaxDaily = x["wind_gust_max_daily"].as<float>();
+
+    Serial.printf("Extras: IMECA %d (%s), solar %.0f W/m2, lluvia %.1f mm/h, rafaga max %.1f\n",
+                  XE1E_Imeca, XE1E_ImecaDominant.c_str(), XE1E_Solar,
+                  XE1E_RainRate, XE1E_GustMaxDaily);
   }
 
-  if (Units == "I") Convert_Readings_to_Imperial();
+  ForecastPeriods = forecastIdx;
+  if (Units == "I") ApplyUnitSystem(forecastIdx, true);
 
   Serial.printf("Parsed %d forecast periods\n", forecastIdx);
   return true;
@@ -1484,7 +1571,10 @@ void DisplayDisplayWindSection(int x, int y, float angle, float windspeed, int C
   setFont(OpenSans24B);
   drawString(x + 3, y - 23, String(windspeed, 1), CENTER);
   setFont(OpenSans12B);
-  drawString(x, y + 20, (Units == "M" ? "m/s" : "mph"), CENTER);
+  // km/h, no m/s: el valor es `current.wind_kph` tal cual (y mph tras
+  // ApplyUnitSystem). La etiqueta venia de cuando el proyecto leia
+  // OpenWeatherMap, que si publica m/s, y no se actualizo al migrar a WeatherAPI.
+  drawString(x, y + 20, (Units == "M" ? "km/h" : "mph"), CENTER);
 }
 
 String WindDegToOrdinalDirection(float winddirection) {
@@ -1537,10 +1627,25 @@ void DisplayPressureSection(int x, int y, float pressure, String slope) {
   setFont(OpenSans14B);
   DrawPressureAndTrend(x - 25, y + 40, pressure, slope);
   if (WxConditions[0].Visibility > 0) {
-    Visibility(x + 143, y + 30, String(WxConditions[0].Visibility / 1000.0, 2) + "km");
+    Visibility(x + 143, y + 30,
+               (Units == "M") ? String(WxConditions[0].Visibility / 1000.0, 2) + "km"
+                              : String(WxConditions[0].Visibility / 1609.344, 2) + "mi");
     x += 150; // Offset if visibility shown
   }
   if (WxConditions[0].Cloudcover > 0) CloudCover(x + 163, y + 30, WxConditions[0].Cloudcover);
+}
+
+// Categoria del IMECA a partir del indice, con las bandas de la NADF-009-AIRE-2017.
+//
+// Se deriva aqui en vez de dibujar la cadena que manda el servidor para que el texto
+// siga el idioma configurado en el display: el servidor solo la sabe en espanol. El
+// numero es la unica fuente de verdad, asi que servidor y firmware no pueden discrepar.
+String ImecaCategory(int idx) {
+  if (idx <= 50)  return TXT_IMECA_GOOD;
+  if (idx <= 100) return TXT_IMECA_REGULAR;
+  if (idx <= 150) return TXT_IMECA_BAD;
+  if (idx <= 200) return TXT_IMECA_VERY_BAD;
+  return TXT_IMECA_EXTREME;
 }
 
 void DisplayFeelsLike(int x, int y) {
@@ -1548,18 +1653,25 @@ void DisplayFeelsLike(int x, int y) {
   String feelsText = TXT_FEELS_LIKE + ": " + String(WxConditions[0].Feelslike, 1) + "°";
   drawString(x, y, feelsText, LEFT);
 
-  // AQI to the right of feels like (10px spacing)
-  String aqiDesc;
-  switch(WxConditions[0].AQI) {
-    case 1: aqiDesc = TXT_AQI_GOOD; break;
-    case 2: aqiDesc = TXT_AQI_FAIR; break;
-    case 3: aqiDesc = TXT_AQI_MODERATE; break;
-    case 4: aqiDesc = TXT_AQI_POOR; break;
-    case 5: aqiDesc = TXT_AQI_VERY_POOR; break;
-    default: aqiDesc = "--";
+  // Indice de calidad del aire a la derecha de la sensacion. Con estacion propia se
+  // muestra el IMECA, que es el indice oficial del Valle de Mexico y ademas trae el
+  // numero real; con WeatherAPI se sigue mostrando su ICA de 1 a 5 como siempre.
+  String airText;
+  if (XE1E_Imeca >= 0) {
+    airText = TXT_IMECA + ": " + String(XE1E_Imeca) + " - " + ImecaCategory(XE1E_Imeca);
+  } else {
+    String aqiDesc;
+    switch(WxConditions[0].AQI) {
+      case 1: aqiDesc = TXT_AQI_GOOD; break;
+      case 2: aqiDesc = TXT_AQI_FAIR; break;
+      case 3: aqiDesc = TXT_AQI_MODERATE; break;
+      case 4: aqiDesc = TXT_AQI_POOR; break;
+      case 5: aqiDesc = TXT_AQI_VERY_POOR; break;
+      default: aqiDesc = "--";
+    }
+    airText = TXT_AQI + ": " + String(WxConditions[0].AQI) + " - " + aqiDesc;
   }
-  String aqiText = TXT_AQI + ": " + String(WxConditions[0].AQI) + " - " + aqiDesc;
-  drawString(x + 275, y - 1, aqiText, LEFT);
+  drawString(x + 275, y - 1, airText, LEFT);
 }
 
 // Find first forecast index within 1 hour of current time
@@ -1893,7 +2005,7 @@ void DrawSegment(int x, int y, int o1, int o2, int o3, int o4, int o11, int o12,
 }
 
 void DrawPressureAndTrend(int x, int y, float pressure, String slope) {
-  drawString(x + 25, y - 10, String(pressure, (Units == "M" ? 0 : 1)) + (Units == "M" ? (currentLang == 0 ? "mb" : "hPa") : "in"), LEFT);
+  drawString(x + 25, y - 10, String(pressure, (Units == "M" ? 0 : 1)) + (Units == "M" ? "mb" : "in"), LEFT);
   // Arrow with shaft and head for pressure trend
   int ax = x + 8;  // Arrow center x
   int ay = y;      // Arrow center y (lowered)
@@ -2770,7 +2882,7 @@ void DisplayCurrentDetailScreen() {
   // Pressure - value large, unit small aligned at bottom
   setFont(OpenSans24B);
   float pressValue = (Units == "M") ? WxConditions[0].Pressure : WxConditions[0].Pressure * HPA_TO_INHG;
-  String pressUnit = (Units == "M") ? (currentLang == 0 ? "mb" : "hPa") : "inHg";
+  String pressUnit = (Units == "M") ? "mb" : "inHg";
   drawString(col2X, topY, String(pressValue, 0), RIGHT);
   setFont(OpenSans14B);
   drawString(col2X + 5, topY + 10, pressUnit, LEFT);
@@ -2885,47 +2997,55 @@ void DisplayCurrentDetailScreen() {
 
   setFont(OpenSans12B);
   drawString(rightColLabel, row1Y, TXT_WIND + ":", RIGHT);
-  drawString(rightColLabel, row2Y - 8, TXT_GUSTS + ":", RIGHT);
+  // Con estacion propia la fila de rafagas pasa a mostrar la MAXIMA del dia, que es un
+  // dato mas util que la del instante y solo lo sabe un anemometro propio. La etiqueta
+  // cambia con ella: rotularla "Rafagas" haria pensar que sigue siendo la del momento.
+  bool gustMax = XE1E_Present && !isnan(XE1E_GustMaxDaily);
+  drawString(rightColLabel, row2Y - 8, (gustMax ? TXT_GUSTS_MAX : TXT_GUSTS) + ":", RIGHT);
   drawString(rightColLabel, row3Y, TXT_VISIBILITY + ":", RIGHT);
   drawString(rightColLabel, row4Y, TXT_CLOUDINESS + ":", RIGHT);
   drawString(rightColLabel, row5Y, TXT_FEELS_LIKE + ":", RIGHT);
   drawString(rightColLabel, row6Y, TXT_DEWPOINT + ":", RIGHT);
 
   setFont(OpenSans14B);
-  float visKm = WxConditions[0].Visibility / 1000.0;
+  // La visibilidad se guarda en metros y se dibuja aqui: en imperial, millas. Antes se
+  // rotulaba " km" siempre, tambien en modo imperial.
+  bool metric = (Units == "M");
+  float visValue = metric ? (WxConditions[0].Visibility / 1000.0)
+                          : (WxConditions[0].Visibility / 1609.344);
+  String visUnit = metric ? " km" : " mi";
   String windDir = WindDegToOrdinalDirection(WxConditions[0].Winddir);
   drawString(rightColValue, row1Y - 3, windDir + " - " + String(WxConditions[0].Windspeed, 1) + ((Units == "M") ? " km/h" : " mph"), LEFT);
-  drawString(rightColValue, row2Y - 7, String(WxConditions[0].Gust, 1) + ((Units == "M") ? " km/h" : " mph"), LEFT);
-  drawString(rightColValue, row3Y - 3, String(visKm, 1) + " km", LEFT);
+  drawString(rightColValue, row2Y - 7, String(gustMax ? XE1E_GustMaxDaily : WxConditions[0].Gust, 1) + ((Units == "M") ? " km/h" : " mph"), LEFT);
+  drawString(rightColValue, row3Y - 3, String(visValue, 1) + visUnit, LEFT);
   drawString(rightColValue, row4Y - 3, String(WxConditions[0].Cloudcover) + "%", LEFT);
   drawString(rightColValue, row5Y - 3, String(WxConditions[0].Feelslike, 1) + tempUnit, LEFT);
   drawString(rightColValue, row6Y - 3, String(WxConditions[0].Dewpoint, 1) + tempUnit, LEFT);
 
-  // === BOTTOM SECTION: Sunrise, Sunset, Rain Prob, UV, AQI (5 columns) ===
+  // === BOTTOM SECTION ===
+  //
+  // Dos maquetaciones segun la fuente de datos:
+  //
+  //   WeatherAPI (5 columnas, como siempre): amanecer, atardecer, lluvia de hoy, UV, ICA.
+  //
+  //   Servidor propio (4 columnas): lluvia/evento, radiacion solar, UV, IMECA. Amanecer y
+  //   atardecer se quitan porque la pantalla PRINCIPAL ya los muestra en la seccion de
+  //   astronomia --el dato no se pierde-- y el hueco vale mas para lo que solo puede dar
+  //   una estacion propia.
+  //
+  // No se unifica en una sola maquetacion a proposito: con WeatherAPI no hay radiacion ni
+  // intensidad de lluvia, asi que la version de 4 columnas dejaria dos celdas con "--" y
+  // encima quitaria el amanecer. Seria una regresion para quien use la fuente por omision.
   int lineY = 450;
   drawFastHLine(50, lineY, SCREEN_WIDTH - 100, DarkGrey);
 
-  // X positions for 5 columns evenly distributed
-  int sunriseX = 100;
-  int sunsetX = 290;
-  int rainX = 480;
-  int uvX = 670;
-  int aqiX = 860;
-
-  // Y positions
   int valY = 470;
   int labelOffsetY = 33;
-
-  // Values
-  setFont(OpenSans12B);
-  drawString(sunriseX, valY, convertTo24Hour(WxConditions[0].SunriseStr), CENTER);
-  drawString(sunsetX, valY, convertTo24Hour(WxConditions[0].SunsetStr), CENTER);
-  // Show daily rainfall total from WeatherAPI (already converted to inches if Imperial)
   String rainUnit = (Units == "M") ? "mm" : "in";
-  drawString(rainX, valY, String(WxConditions[0].DailyRainfall, 1) + rainUnit, CENTER);
 
-  // UV with level (uppercase, smaller font, raised 5px)
   setFont(OpenSans12B);
+
+  // UV: igual en las dos maquetaciones
   float uv = WxConditions[0].UVIndex;
   String uvLevel;
   if (uv < 3) uvLevel = " " + TXT_UV_LOW_S;
@@ -2934,28 +3054,58 @@ void DisplayCurrentDetailScreen() {
   else if (uv < 11) uvLevel = " " + TXT_UV_VHIGH_S;
   else uvLevel = " " + TXT_UV_EXT_S;
   uvLevel.toUpperCase();
-  drawString(uvX, valY - 5, String(uv, 1) + uvLevel, CENTER);
 
-  // AQI (uppercase, smaller font)
-  String aqiText;
-  switch(WxConditions[0].AQI) {
-    case 1: aqiText = TXT_AQI_GOOD; break;
-    case 2: aqiText = TXT_AQI_FAIR; break;
-    case 3: aqiText = TXT_AQI_MODERATE; break;
-    case 4: aqiText = TXT_AQI_POOR; break;
-    case 5: aqiText = TXT_AQI_VERY_POOR; break;
-    default: aqiText = "--";
+  // Indice de calidad del aire: IMECA con su numero si la estacion propia lo manda; si no,
+  // el ICA de 1 a 5 de WeatherAPI, exactamente como antes.
+  String airValue, airLabel;
+  if (XE1E_Imeca >= 0) {
+    airValue = String(XE1E_Imeca) + " " + ImecaCategory(XE1E_Imeca);
+    airLabel = TXT_IMECA;
+  } else {
+    switch(WxConditions[0].AQI) {
+      case 1: airValue = TXT_AQI_GOOD; break;
+      case 2: airValue = TXT_AQI_FAIR; break;
+      case 3: airValue = TXT_AQI_MODERATE; break;
+      case 4: airValue = TXT_AQI_POOR; break;
+      case 5: airValue = TXT_AQI_VERY_POOR; break;
+      default: airValue = "--";
+    }
+    airLabel = TXT_AQI;
   }
-  aqiText.toUpperCase();
-  drawString(aqiX, valY - 2, aqiText, CENTER);
+  airValue.toUpperCase();
 
-  // Labels
-  setFont(OpenSans12B);
-  drawString(sunriseX, valY + labelOffsetY, TXT_SUNRISE, CENTER);
-  drawString(sunsetX, valY + labelOffsetY, TXT_SUNSET, CENTER);
-  drawString(rainX, valY + labelOffsetY, TXT_RAIN_TODAY, CENTER);
-  drawString(uvX, valY + labelOffsetY, TXT_UV_INDEX, CENTER);
-  drawString(aqiX, valY + labelOffsetY, TXT_AQI, CENTER);
+  if (XE1E_Present) {
+    int rainX = 120, solarX = 360, uvX = 600, airX = 840;
+
+    // Intensidad ahora mismo y acumulado del episodio en curso. OJO: el evento puede
+    // haber empezado dias antes, asi que puede ser MAYOR que el total de hoy sin que eso
+    // sea un error.
+    String rainTxt = isnan(XE1E_RainRate) ? "--" : String(XE1E_RainRate, 1) + rainUnit + "/h";
+    if (!isnan(XE1E_RainEvent)) rainTxt += "  " + String(XE1E_RainEvent, 1) + rainUnit;
+    drawString(rainX, valY, rainTxt, CENTER);
+    drawString(solarX, valY, isnan(XE1E_Solar) ? "--" : String(XE1E_Solar, 0) + " W/m2", CENTER);
+    drawString(uvX, valY - 5, String(uv, 1) + uvLevel, CENTER);
+    drawString(airX, valY - 2, airValue, CENTER);
+
+    drawString(rainX, valY + labelOffsetY, TXT_RAIN_EVENT, CENTER);
+    drawString(solarX, valY + labelOffsetY, TXT_SOLAR, CENTER);
+    drawString(uvX, valY + labelOffsetY, TXT_UV_INDEX, CENTER);
+    drawString(airX, valY + labelOffsetY, airLabel, CENTER);
+  } else {
+    int sunriseX = 100, sunsetX = 290, rainX = 480, uvX = 670, airX = 860;
+
+    drawString(sunriseX, valY, convertTo24Hour(WxConditions[0].SunriseStr), CENTER);
+    drawString(sunsetX, valY, convertTo24Hour(WxConditions[0].SunsetStr), CENTER);
+    drawString(rainX, valY, String(WxConditions[0].DailyRainfall, 1) + rainUnit, CENTER);
+    drawString(uvX, valY - 5, String(uv, 1) + uvLevel, CENTER);
+    drawString(airX, valY - 2, airValue, CENTER);
+
+    drawString(sunriseX, valY + labelOffsetY, TXT_SUNRISE, CENTER);
+    drawString(sunsetX, valY + labelOffsetY, TXT_SUNSET, CENTER);
+    drawString(rainX, valY + labelOffsetY, TXT_RAIN_TODAY, CENTER);
+    drawString(uvX, valY + labelOffsetY, TXT_UV_INDEX, CENTER);
+    drawString(airX, valY + labelOffsetY, airLabel, CENTER);
+  }
 
   // Status indicators (SD, Battery, WiFi) - same position as main screen
   DisplayStatusSection(600, 33, wifi_signal);
@@ -3158,18 +3308,29 @@ void DisplayAirQualityScreen() {
   // ICA and UV below the line - larger font
   setFont(OpenSans16B);
 
-  // ICA (Air Quality Index) - uppercase with colon
-  String aqiDesc;
-  switch(WxConditions[0].AQI) {
-    case 1: aqiDesc = TXT_AQI_GOOD; break;
-    case 2: aqiDesc = TXT_AQI_FAIR; break;
-    case 3: aqiDesc = TXT_AQI_MODERATE; break;
-    case 4: aqiDesc = TXT_AQI_POOR; break;
-    case 5: aqiDesc = TXT_AQI_VERY_POOR; break;
-    default: aqiDesc = "--";
+  // Indice de calidad del aire: IMECA si lo manda la estacion propia, ICA de WeatherAPI
+  // si no. Aqui, que es la pantalla dedicada al aire, se anade el contaminante DOMINANTE:
+  // es lo que convierte un numero en algo accionable (no es lo mismo un 100 por ozono a
+  // mediodia que por particulas).
+  String icaText;
+  if (XE1E_Imeca >= 0) {
+    String cat = ImecaCategory(XE1E_Imeca);
+    cat.toUpperCase();
+    icaText = TXT_IMECA + " :  " + String(XE1E_Imeca) + " - " + cat;
+    if (XE1E_ImecaDominant.length() > 0) icaText += " (" + XE1E_ImecaDominant + ")";
+  } else {
+    String aqiDesc;
+    switch(WxConditions[0].AQI) {
+      case 1: aqiDesc = TXT_AQI_GOOD; break;
+      case 2: aqiDesc = TXT_AQI_FAIR; break;
+      case 3: aqiDesc = TXT_AQI_MODERATE; break;
+      case 4: aqiDesc = TXT_AQI_POOR; break;
+      case 5: aqiDesc = TXT_AQI_VERY_POOR; break;
+      default: aqiDesc = "--";
+    }
+    aqiDesc.toUpperCase();
+    icaText = TXT_AQI + " :  " + String(WxConditions[0].AQI) + " - " + aqiDesc;
   }
-  aqiDesc.toUpperCase();
-  String icaText = TXT_AQI + " :  " + String(WxConditions[0].AQI) + " - " + aqiDesc;
   drawString(centerX - 175, bottomLineY + 15, icaText, CENTER);
 
   // UV Index - uppercase with colon (+30px separation)
@@ -3260,10 +3421,11 @@ void DisplayForecastScreen() {
     setFont(OpenSans12B);
     drawString(xPos, dailyY + 120, String(dayHigh, 0) + "°/" + String(dayLow, 0) + "°", CENTER);
 
-    // Rain if any
-    if (dayRain > 0.1) {
+    // Rain if any. El umbral va en la unidad en uso: 0.1 mm son 0.004 in, y con un
+    // 0.1 fijo en imperial los dias de lluvia ligera se quedaban sin cifra.
+    if (dayRain > (Units == "M" ? 0.1 : 0.004)) {
       setFont(OpenSans10B);
-      drawString(xPos, dailyY + 150, String(dayRain, 1) + "mm", CENTER);
+      drawString(xPos, dailyY + 150, String(dayRain, 1) + (Units == "M" ? "mm" : "in"), CENTER);
     }
   }
 }
@@ -3984,7 +4146,7 @@ void DisplayHistoryScreen() {
   DrawHistoryGraph(gx1, gy1, gwidth, gheight, 0, 40, TXT_GRAPH_TEMP, Units == "M" ? "°C" : "°F", hist_temp, hist_pos, readings, autoscale_on, barchart_off, actualHours, historyShowWeek, startHour);
 
   // Pressure - top right
-  DrawHistoryGraph(gx2, gy1, gwidth, gheight, 900, 1050, TXT_GRAPH_PRESSURE, Units == "M" ? (currentLang == 0 ? "mb" : "hPa") : "in", hist_press, hist_pos, readings, autoscale_on, barchart_off, actualHours, historyShowWeek, startHour);
+  DrawHistoryGraph(gx2, gy1, gwidth, gheight, 900, 1050, TXT_GRAPH_PRESSURE, Units == "M" ? "mb" : "in", hist_press, hist_pos, readings, autoscale_on, barchart_off, actualHours, historyShowWeek, startHour);
 
   // Humidity - bottom left
   DrawHistoryGraph(gx1, gy2, gwidth, gheight, 0, 100, TXT_GRAPH_HUMIDITY, "%", hist_hum, hist_pos, readings, autoscale_off, barchart_off, actualHours, historyShowWeek, startHour);

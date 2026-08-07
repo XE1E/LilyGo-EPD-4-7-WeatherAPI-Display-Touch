@@ -556,6 +556,12 @@ const char* TXT_CLOUDINESS_ARR[] = { "Nubosidad", "Cloudiness", "Nebulosite" };
 const char* TXT_WIND_ARR[] = { "Viento", "Wind", "Vent" };
 const char* TXT_WIND_DIR_ARR[] = { "Direccion Viento", "Wind Direction", "Direction Vent" };
 const char* TXT_GUSTS_ARR[] = { "Rafagas", "Gusts", "Rafales" };
+// Etiquetas de los datos que solo llegan de un servidor propio. La rafaga cambia de
+// texto porque cambia de significado: con estacion propia se muestra la punta MAXIMA
+// del dia, y dejarla rotulada "Rafagas" haria pensar que es la del momento.
+const char* TXT_GUSTS_MAX_ARR[] = { "Rafaga Max", "Max Gust", "Rafale Max" };
+const char* TXT_SOLAR_ARR[] = { "Solar", "Solar", "Solaire" };
+const char* TXT_RAIN_EVENT_ARR[] = { "Lluvia/Evento", "Rain/Event", "Pluie/Evenem." };
 const char* TXT_RAIN_PROB_ARR[] = { "Prob. Lluvia", "Rain Prob.", "Prob. Pluie" };
 const char* TXT_RAIN_24H_ARR[] = { "Lluvia 24h", "Rain 24h", "Pluie 24h" };
 const char* TXT_RAIN_TODAY_ARR[] = { "Lluvia Hoy", "Rain Today", "Pluie Jour" };
@@ -564,6 +570,16 @@ const char* TXT_DEWPOINT_ARR[] = { "Punto de rocio", "Dew Point", "Point de rose
 const char* TXT_UV_INDEX_ARR[] = { "Indice UV", "UV Index", "Indice UV" };
 const char* TXT_AIR_QUALITY_ARR[] = { "Calidad del Aire", "Air Quality", "Qualite de l'Air" };
 const char* TXT_AQI_ARR[] = { "ICA", "AQI", "IQA" };
+// IMECA: indice mexicano de calidad del aire (NADF-009-AIRE-2017), disponible solo si la
+// fuente es un servidor propio que lo calcule. Sus categorias NO coinciden con las del
+// ICA/AQI de arriba --un IMECA de 104 es "Mala", no "Moderado"--, asi que llevan textos
+// propios en vez de reutilizar aquellos.
+const char* TXT_IMECA_ARR[] = { "IMECA", "IMECA", "IMECA" };
+const char* TXT_IMECA_GOOD_ARR[] = { "Buena", "Good", "Bonne" };
+const char* TXT_IMECA_REGULAR_ARR[] = { "Regular", "Moderate", "Moyenne" };
+const char* TXT_IMECA_BAD_ARR[] = { "Mala", "Poor", "Mauvaise" };
+const char* TXT_IMECA_VERY_BAD_ARR[] = { "Muy mala", "Very poor", "Tres mauvaise" };
+const char* TXT_IMECA_EXTREME_ARR[] = { "Extrem. mala", "Extremely poor", "Extrem. mauvaise" };
 const char* TXT_AQI_GOOD_ARR[] = { "Bueno", "Good", "Bon" };
 const char* TXT_AQI_FAIR_ARR[] = { "Aceptable", "Fair", "Acceptable" };
 const char* TXT_AQI_MODERATE_ARR[] = { "Moderado", "Moderate", "Modere" };
@@ -589,6 +605,9 @@ const char* TXT_UV_EXT_S_ARR[] = { "Extr.", "Extr.", "Extr." };
 #define TXT_WIND String(TXT_WIND_ARR[currentLang])
 #define TXT_WIND_DIR String(TXT_WIND_DIR_ARR[currentLang])
 #define TXT_GUSTS String(TXT_GUSTS_ARR[currentLang])
+#define TXT_GUSTS_MAX String(TXT_GUSTS_MAX_ARR[currentLang])
+#define TXT_SOLAR String(TXT_SOLAR_ARR[currentLang])
+#define TXT_RAIN_EVENT String(TXT_RAIN_EVENT_ARR[currentLang])
 #define TXT_RAIN_PROB String(TXT_RAIN_PROB_ARR[currentLang])
 #define TXT_RAIN_24H String(TXT_RAIN_24H_ARR[currentLang])
 #define TXT_RAIN_TODAY String(TXT_RAIN_TODAY_ARR[currentLang])
@@ -597,6 +616,12 @@ const char* TXT_UV_EXT_S_ARR[] = { "Extr.", "Extr.", "Extr." };
 #define TXT_UV_INDEX String(TXT_UV_INDEX_ARR[currentLang])
 #define TXT_AIR_QUALITY String(TXT_AIR_QUALITY_ARR[currentLang])
 #define TXT_AQI String(TXT_AQI_ARR[currentLang])
+#define TXT_IMECA String(TXT_IMECA_ARR[currentLang])
+#define TXT_IMECA_GOOD String(TXT_IMECA_GOOD_ARR[currentLang])
+#define TXT_IMECA_REGULAR String(TXT_IMECA_REGULAR_ARR[currentLang])
+#define TXT_IMECA_BAD String(TXT_IMECA_BAD_ARR[currentLang])
+#define TXT_IMECA_VERY_BAD String(TXT_IMECA_VERY_BAD_ARR[currentLang])
+#define TXT_IMECA_EXTREME String(TXT_IMECA_EXTREME_ARR[currentLang])
 #define TXT_AQI_GOOD String(TXT_AQI_GOOD_ARR[currentLang])
 #define TXT_AQI_FAIR String(TXT_AQI_FAIR_ARR[currentLang])
 #define TXT_AQI_MODERATE String(TXT_AQI_MODERATE_ARR[currentLang])

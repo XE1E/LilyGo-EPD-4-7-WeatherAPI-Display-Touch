@@ -5,6 +5,21 @@ Todos los cambios notables de este proyecto se documentan en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/)
 y el proyecto sigue un versionado de tipo `MAYOR.MENOR`.
 
+## [No publicado]
+
+### Añadido
+- **Datos de tu estación en las pantallas**, cuando la fuente es un servidor propio. Con WeatherAPI las pantallas se dibujan exactamente igual que antes.
+  - **IMECA en lugar de ICA** en la pantalla principal, en Condiciones actuales y en Calidad del aire. Es el índice oficial del Valle de México y trae su número real, no una escala de 1 a 5. La categoría se deriva en el firmware de las bandas de la NADF-009-AIRE-2017, así que sigue el idioma configurado. En Calidad del aire se añade además el **contaminante dominante**, que es lo que convierte el número en algo accionable.
+  - **Radiación solar** (W/m²) y **lluvia: intensidad y acumulado del episodio en curso** en la franja inferior de Condiciones actuales. Ojo: el episodio puede haber empezado días antes, así que puede ser mayor que el total del día sin que sea un error.
+  - La fila de ráfagas de Condiciones actuales pasa a mostrar la **máxima del día** en vez de la del instante, y la etiqueta cambia con ella.
+  - Amanecer y atardecer salen de esa franja inferior para hacer sitio: siguen visibles en la pantalla principal, en la sección de astronomía.
+
+### Corregido
+- **La rosa de los vientos rotulaba `m/s` sobre un valor en km/h.** La etiqueta venía de cuando el proyecto leía OpenWeatherMap, que sí publica m/s, y no se actualizó al migrar a WeatherAPI.
+- **El modo imperial mezclaba unidades de forma amplia.** Solo se convertía la lluvia, así que la pantalla mostraba grados Celsius rotulados `°F`, kilómetros por hora rotulados `mph`, y la visibilidad en kilómetros rotulada `km` incluso en imperial. Del pronóstico solo se convertía el primer periodo, así que las gráficas y la suma de lluvia diaria mezclaban milímetros y pulgadas. Ahora la conversión es completa y vive en un solo sitio.
+- **Cambiar de unidades desde el portal dejaba los datos en las unidades anteriores** hasta la siguiente descarga, que puede tardar media hora. Ahora se reconvierte lo que ya está en memoria; la conversión es bidireccional y con una sola lista de campos, para que no puedan desincronizarse.
+- La presión en métrico dice **mb** en los tres idiomas, no `mb` en español y `hPa` en los otros.
+
 ## [2.10] - 2026-08-07
 
 ### Añadido
