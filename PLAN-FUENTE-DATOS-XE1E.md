@@ -79,7 +79,18 @@ serie (líneas 1198‑1199). Tras el arreglo deben ser idénticas.
 
 ---
 
-## Fase 1 — Endpoint nuevo en el servidor
+## Fase 1 — Endpoint nuevo en el servidor ✅ HECHO Y DESPLEGADO (2026-08-07)
+
+`GET https://clima.xe1e.net/api/epaper/forecast.json` está en producción y verificado con
+dato real: `xe1e.source = "estacion"`, 3 días × 24 h, amanecer 06:14 y atardecer 19:09,
+condiciones en español, fases lunares en inglés canónico, **22,8 KB** de payload frente al
+buffer de 64 KB del firmware.
+
+Implementado en `receiver/app/services/epaper.py` (commit `f8bee98` del repo del servidor),
+con `openmeteo.get_forecast(..., epaper=True)` para el conjunto horario ampliado, cacheado
+aparte del que usa el dashboard. Lo que sigue en esta sección es el diseño de referencia.
+
+### Diseño
 
 `GET /api/epaper/forecast.json` en `receiver/app/main.py`, con la lógica en un
 `receiver/app/services/epaper.py` nuevo.
