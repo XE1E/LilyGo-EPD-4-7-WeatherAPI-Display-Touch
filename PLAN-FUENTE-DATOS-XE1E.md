@@ -256,13 +256,28 @@ aplicaría dos veces.
 
 ### Pendiente, cada cosa su etapa
 
-- **Sensores de interior, jardín (CH1‑8) y remota GW1100.** Necesitan pantallas nuevas. Los
-  datos ya viajan en el bloque `xe1e` (`temp_indoor`, `humidity_indoor`, `temp_ch1`,
-  `humidity_ch1`), así que esta etapa es solo firmware.
+Ojo con el reparto de trabajo: **no todo lo que falta es firmware.** La versión anterior de
+esta lista daba por hecho que los sensores ya viajaban completos y que la etapa era sólo de
+firmware; verificado contra `receiver/app/services/epaper.py` el 2026‑08‑18, eso vale para
+interior y CH1, y no para la remota ni para el resto de los canales. Están separados aquí
+para que no aparezca a media etapa.
+
+- **Interior y jardín (CH1). SÓLO FIRMWARE.** Necesitan una pantalla nueva —en las 11 que ya
+  existen no cabían— pero los datos ya viajan en el bloque `xe1e`: `temp_indoor`,
+  `humidity_indoor`, `temp_ch1`, `humidity_ch1` (`epaper.py`, armado del bloque). El
+  servidor no se toca.
+- **Remota GW1100 y canales CH2‑8. FIRMWARE *Y* SERVIDOR.** Estos datos **no** salen hoy en
+  el bloque `xe1e`: `epaper.py` no tiene una sola referencia a `gw1100`/remota ni campos
+  `ch2`…`ch8`. Hay que ampliar primero el bloque en el servidor —la remota es otra estación,
+  así que su lectura no está en el mismo diccionario que la principal, hay que ir a buscarla
+  por `station=gw1100`— y después dibujarla. Es la etapa que el plan subestimaba.
 - **Pantalla de historia con el histórico real de InfluxDB** en vez de lo que el aparato
   acumula en la SD (`weather_history.h`): años de dato medido al minuto contra una muestra
-  por despertar. Necesita un endpoint nuevo con la forma que esperan las gráficas.
-- Alertas activas, METAR/TAF, sismos.
+  por despertar. **Necesita un endpoint nuevo** con la forma que esperan las gráficas; hoy
+  el único endpoint del e‑paper es `GET /api/epaper/forecast.json`, que no lleva series.
+- **Alertas activas, METAR/TAF y sismos.** Sin empezar, pero el dato ya está servido y
+  probado para la web: `/api/alerts`, `/api/metar` y `/api/earthquakes`. El trabajo es
+  decidir dónde caben en pantalla y sumarlos al payload, no producirlos.
 
 ---
 
