@@ -1198,7 +1198,8 @@ bool DecodeWeatherAPI(const String& json) {
   WxConditions[0].Forecast0 = current["condition"]["text"].as<String>();
   int conditionCode = current["condition"]["code"].as<int>();
   WxConditions[0].ConditionCode = conditionCode;  // Store for short description
-  WxConditions[0].Icon = mapWeatherAPIIcon(conditionCode, current["is_day"].as<int>());
+  WxConditions[0].IsDay = current["is_day"].as<int>();
+  WxConditions[0].Icon = mapWeatherAPIIcon(conditionCode, WxConditions[0].IsDay);
 
   Serial.printf("Temp: %.1f, Feels: %.1f, Hum: %.0f%%\n",
     WxConditions[0].Temperature, WxConditions[0].Feelslike, WxConditions[0].Humidity);
@@ -1619,7 +1620,7 @@ void DisplayTemperatureSection(int x, int y) {
 void DisplayForecastTextSection(int x, int y) {
   setFont(OpenSans14B);
   // Use short description from condition code (no rainfall info added)
-  String Wx_Description = getConditionShortText(WxConditions[0].ConditionCode);
+  String Wx_Description = getConditionShortText(WxConditions[0].ConditionCode, WxConditions[0].IsDay);
 
   drawString(x + 28, y + 25, Wx_Description, LEFT);
 }
@@ -2238,7 +2239,12 @@ void Sunny(int x, int y, bool IconSize, String IconName) {
     Offset = 35;
   }
   else y = y - 3; // Shift up small sun icon
-  if (IconName.endsWith("n")) addmoon(x, y + Offset, scale, IconSize);
+  if (IconName.endsWith("n")) {
+    // Cielo despejado de noche: solo la luna, sin el sol detras -- antes se
+    // dibujaban ambos y el sol grande dominaba la imagen.
+    addmoon(x, y, scale * 1.6, IconSize);
+    return;
+  }
   scale = scale * 1.6;
   addsun(x, y, scale, IconSize);
 }

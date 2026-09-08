@@ -59,6 +59,7 @@ typedef struct { // For current Day and Day 1, 2, 3, etc
   String   Region;        // State/Region
   // Condition code for short description
   int      ConditionCode; // WeatherAPI condition code
+  int      IsDay;         // WeatherAPI is_day (1=day, 0=night) — decide texto/icono dia/noche
 } Forecast_record_type;
 
 #endif /* ifndef FORECAST_RECORD_H_ */

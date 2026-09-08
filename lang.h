@@ -648,9 +648,14 @@ void initLanguage(const char* lang) {
 
 // ============== WEATHER CONDITION SHORT DESCRIPTIONS ==============
 // Maps WeatherAPI condition codes to short descriptions
-String getConditionShortText(int code) {
+String getConditionShortText(int code, int isDay) {
   switch(code) {
-    case 1000: { const char* t[] = {"Soleado", "Sunny", "Ensoleille"}; return t[currentLang]; }
+    // 1000 es el unico codigo de WeatherAPI donde el texto cambia entre dia y
+    // noche ("Sunny" vs "Clear"); todos los demas comparten el mismo texto.
+    case 1000: {
+      if (!isDay) { const char* t[] = {"Despejado", "Clear", "Degage"}; return t[currentLang]; }
+      const char* t[] = {"Soleado", "Sunny", "Ensoleille"}; return t[currentLang];
+    }
     case 1003: { const char* t[] = {"Parcialmente nublado", "Partly cloudy", "Partiellement nuageux"}; return t[currentLang]; }
     case 1006: { const char* t[] = {"Nublado", "Cloudy", "Nuageux"}; return t[currentLang]; }
     case 1009: { const char* t[] = {"Cubierto", "Overcast", "Couvert"}; return t[currentLang]; }
